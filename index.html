@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рейтинг учеников</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+        }
+
+        .page {
+            display: none;
+            padding: 15px;
+        }
+
+        .active {
+            display: block;
+        }
+
+        .rating-section {
+            margin-bottom: 25px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .rating-title {
+            font-size: 1.1em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+            line-height: 1.3;
+        }
+
+        .student-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .student-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .student-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .avatar-container {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px solid #667eea;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .avatar-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .avatar-placeholder {
+            color: #6c757d;
+            font-size: 0.7em;
+            text-align: center;
+            padding: 5px;
+        }
+
+        .student-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .student-name {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 3px;
+            font-size: 0.9em;
+        }
+
+        .student-title {
+            font-size: 0.8em;
+            color: #6c757d;
+            line-height: 1.2;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: transform 0.2s ease;
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .date-picker {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .date-input {
+            padding: 8px 12px;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            font-size: 0.9em;
+            width: 100%;
+            max-width: 200px;
+        }
+
+        .works-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .work-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .student-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        @media (min-width: 768px) {
+            .student-header {
+                align-items: center;
+            }
+        }
+
+        .student-name-large {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1em;
+            min-width: 120px;
+        }
+
+        .notes-container {
+            flex: 1;
+        }
+
+        .notes-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.8em;
+            resize: vertical;
+            min-height: 40px;
+            font-family: inherit;
+        }
+
+        .notes-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .notes-input::placeholder {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .works-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .works-row {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        @media (min-width: 480px) {
+            .works-row {
+                flex-direction: row;
+            }
+        }
+
+        .works-category {
+            margin-bottom: 8px;
+        }
+
+        .category-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+            padding: 3px 0;
+            border-bottom: 1px solid #667eea;
+        }
+
+        .upload-areas {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+        }
+
+        @media (min-width: 480px) {
+            .upload-areas {
+                flex-direction: row;
+            }
+        }
+
+        .upload-area {
+            flex: 1;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .upload-area.has-work {
+            border-style: solid;
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .upload-area:hover {
+            background: #f8f9fa;
+        }
+
+        .work-preview {
+            max-width: 100%;
+            max-height: 80px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-bottom: 8px;
+        }
+
+        .work-preview:hover {
+            transform: scale(1.03);
+        }
+
+        .upload-text {
+            color: #6c757d;
+            font-size: 0.8em;
+            margin-top: 3px;
+        }
+
+        .work-number {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 3px;
+            font-size: 0.85em;
+        }
+
+        .upload-time {
+            font-size: 0.7em;
+            color: #888;
+            margin-top: 5px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75em;
+            margin-top: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.95);
+            animation: fadeIn 0.3s ease;
+            touch-action: manipulation;
+        }
+
+        .modal-content {
+            display: block;
+            margin: auto;
+            max-width: 95%;
+            max-height: 95%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            color: white;
+            font-size: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            z-index: 1001;
+        }
+
+        .close:hover {
+            color: #667eea;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .student-item {
+                padding: 10px;
+            }
+            
+            .work-item {
+                padding: 12px;
+            }
+            
+            .upload-area {
+                padding: 12px;
+                min-height: 150px;
+            }
+            
+            .nav-btn {
+                padding: 12px 15px;
+                font-size: 0.85em;
+            }
+            
+            header {
+                padding: 15px 10px;
+            }
+            
+            h1 {
+                font-size: 1.3em;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .page {
+                padding: 10px;
+            }
+            
+            .rating-section {
+                padding: 10px;
+            }
+            
+            .avatar-container {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .student-name {
+                font-size: 0.85em;
+            }
+            
+            .student-title {
+                font-size: 0.75em;
+            }
+            
+            .notes-input {
+                font-size: 0.75em;
+                padding: 6px;
+            }
+            
+            .upload-time {
+                font-size: 0.65em;
+            }
+            
+            .delete-btn {
+                padding: 4px 8px;
+                font-size: 0.7em;
+            }
+        }
+
+        .student-item, .nav-btn, .upload-area {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        .works-list {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .sync-status {
+            text-align: center;
+            padding: 5px;
+            font-size: 0.8em;
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏆 Рейтинг учеников</h1>
+            <p style="font-size: 0.9em;">Система оценки и мониторинга успехов</p>
+            <div class="sync-status" id="syncStatus">🔄 Синхронизация...</div>
+        </header>
+
+        <!-- Главная страница с рейтингами -->
+        <div id="mainPage" class="page active">
+            <div class="rating-section">
+                <h2 class="rating-title">«Не жди финиша — будь стартом!»</h2>
+                <div class="student-list" id="rating1List"></div>
+            </div>
+
+            <div class="rating-section">
+                <h2 class="rating-title">100% — не мечта. Это твой следующий уровень!</h2>
+                <div class="student-list" id="rating2List"></div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="showPage('worksPage')">📚 Просмотр работ</button>
+            </div>
+        </div>
+
+        <!-- Страница просмотра работ -->
+        <div id="worksPage" class="page">
+            <div class="date-picker">
+                <input type="date" class="date-input" id="workDate">
+            </div>
+
+            <div class="works-list" id="worksList"></div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="showPage('mainPage')">⭐ К рейтингам</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для полноэкранного просмотра -->
+    <div id="imageModal" class="modal">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="fullscreenImage">
+    </div>
+
+    <!-- Подключаем Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // === КОНФИГУРАЦИЯ FIREBASE С ВАШИМИ КЛЮЧАМИ ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyA1gMGXixXqfgptc0-Nx5fRWCbS2lefXLY",
+            authDomain: "global-elite-club-dcd0d.firebaseapp.com",
+            projectId: "global-elite-club-dcd0d",
+            storageBucket: "global-elite-club-dcd0d.firebasestorage.app",
+            messagingSenderId: "372974979606",
+            appId: "1:372974979606:web:b3128f5165621e5fbc4337",
+            measurementId: "G-3MTEVE62XT"
+        };
+
+        // Инициализируем Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Данные для рейтингов
+        const rating1Titles = [
+            "Гепард Скорости", "Турбо-сокол", "Быстрая лиса", "Енот-шустрик", 
+            "Шустрый зайчик", "Шустрая белочка", "Неутомимый Муравей", 
+            "Ёжик-быстроножик", "Трудяга-бобр", "Проворная выдра", "Смелая черепашка"
+        ];
+
+        const rating2Titles = [
+            "Орел точности", "Пантера-точность", "Мудрая сова", "Лиса-точность", 
+            "Дельфин смысла", "Умный котик", "Аккуратная косуля", 
+            "Внимательный медвежонок", "Пингвин ясности", "Аккуратный кролик", "Потенциальная звезда"
+        ];
+
+        const students = [
+            "Alina", "Artem", "Dania", "Denis", "Lera", "Nastia Che", 
+            "Nastia S", "Natasha", "Rita", "Selin", "Vika"
+        ];
+
+        // Хранилища для данных
+        let studentNotes = {};
+        let studentWorks = {};
+
+        // Функция обновления статуса синхронизации
+        function updateSyncStatus(message, isSuccess = true) {
+            const statusElement = document.getElementById('syncStatus');
+            statusElement.textContent = message;
+            statusElement.style.color = isSuccess ? '#28a745' : '#dc3545';
+        }
+
+        // Загрузка данных из Firebase
+        async function loadAllData() {
+            try {
+                updateSyncStatus('🔄 Загрузка данных...');
+                
+                // Загружаем заметки
+                const notesSnapshot = await db.collection('notes').get();
+                studentNotes = {};
+                notesSnapshot.forEach(doc => {
+                    studentNotes[doc.id] = doc.data().note;
+                });
+                
+                // Загружаем работы
+                const worksSnapshot = await db.collection('works').get();
+                studentWorks = {};
+                worksSnapshot.forEach(doc => {
+                    studentWorks[doc.id] = doc.data();
+                });
+                
+                updateSyncStatus('✅ Данные загружены');
+                console.log('Данные загружены:', { notes: studentNotes, works: studentWorks });
+                
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+                updateSyncStatus('❌ Ошибка загрузки', false);
+                
+                // Fallback на localStorage
+                studentNotes = JSON.parse(localStorage.getItem('studentNotes')) || {};
+                studentWorks = JSON.parse(localStorage.getItem('studentWorks')) || {};
+            }
+        }
+
+        // Сохранение заметки
+        async function saveNote(studentName, noteText) {
+            try {
+                await db.collection('notes').doc(studentName).set({
+                    note: noteText,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                studentNotes[studentName] = noteText;
+                updateSyncStatus('✅ Заметка сохранена');
+            } catch (error) {
+                console.error('Ошибка сохранения заметки:', error);
+                updateSyncStatus('❌ Ошибка сохранения', false);
+                
+                // Fallback
+                studentNotes[studentName] = noteText;
+                localStorage.setItem('studentNotes', JSON.stringify(studentNotes));
+            }
+        }
+
+        // Сохранение работы
+        async function saveWork(student, workType, imageData) {
+            const workKey = `${student}_${workType}`;
+            try {
+                updateSyncStatus('🔄 Сохранение работы...');
+                await db.collection('works').doc(workKey).set({
+                    image: imageData,
+                    student: student,
+                    workType: workType,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                studentWorks[workKey] = {
+                    image: imageData,
+                    timestamp: new Date().toISOString()
+                };
+                updateSyncStatus('✅ Работа сохранена');
+            } catch (error) {
+                console.error('Ошибка сохранения работы:', error);
+                updateSyncStatus('❌ Ошибка сохранения', false);
+                
+                // Fallback
+                studentWorks[workKey] = {
+                    image: imageData,
+                    timestamp: new Date().toISOString()
+                };
+                localStorage.setItem('studentWorks', JSON.stringify(studentWorks));
+            }
+        }
+
+        // Удаление работы
+        async function deleteWork(student, workType) {
+            const workKey = `${student}_${workType}`;
+            if (confirm('Вы уверены, что хотите удалить эту работу?')) {
+                try {
+                    await db.collection('works').doc(workKey).delete();
+                    delete studentWorks[workKey];
+                    initializeWorksPage();
+                    updateSyncStatus('✅ Работа удалена');
+                } catch (error) {
+                    console.error('Ошибка удаления:', error);
+                    // Fallback
+                    delete studentWorks[workKey];
+                    localStorage.setItem('studentWorks', JSON.stringify(studentWorks));
+                    initializeWorksPage();
+                    updateSyncStatus('✅ Работа удалена (локально)');
+                }
+            }
+        }
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadAllData();
+            initializeRatings();
+            initializeWorksPage();
+            document.getElementById('workDate').valueAsDate = new Date();
+        });
+
+        function initializeRatings() {
+            const rating1List = document.getElementById('rating1List');
+            const rating2List = document.getElementById('rating2List');
+
+            rating1Titles.forEach((title, index) => {
+                const studentItem = createRatingItem(index + 1, title);
+                rating1List.appendChild(studentItem);
+            });
+
+            rating2Titles.forEach((title, index) => {
+                const studentItem = createRatingItem(index + 1, title);
+                rating2List.appendChild(studentItem);
+            });
+        }
+
+        function createRatingItem(place, title) {
+            const item = document.createElement('div');
+            item.className = 'student-item';
+            
+            item.innerHTML = `
+                <div class="avatar-container" onclick="triggerAvatarUpload(this)">
+                    <div class="avatar-placeholder">Аватар</div>
+                    <input type="file" class="file-input" accept="image/*" onchange="handleAvatarUpload(this)">
+                </div>
+                <div class="student-info">
+                    <div class="student-name">${place} место</div>
+                    <div class="student-title">${title}</div>
+                </div>
+            `;
+            
+            return item;
+        }
+
+        function initializeWorksPage() {
+            const worksList = document.getElementById('worksList');
+            worksList.innerHTML = '';
+            
+            students.forEach(student => {
+                const workItem = document.createElement('div');
+                workItem.className = 'work-item';
+                
+                const savedNote = studentNotes[student] || '';
+                
+                workItem.innerHTML = `
+                    <div class="student-header">
+                        <div class="student-name-large">${student}</div>
+                        <div class="notes-container">
+                            <textarea 
+                                class="notes-input" 
+                                placeholder="Заметки об ученике..."
+                                oninput="saveNote('${student}', this.value)"
+                            >${savedNote}</textarea>
+                        </div>
+                    </div>
+                    <div class="works-container">
+                        <div class="works-category">
+                            <div class="category-title">Основные работы</div>
+                            <div class="works-row">
+                                <div class="upload-areas">
+                                    ${createWorkArea(student, 'work1')}
+                                    ${createWorkArea(student, 'work2')}
+                                    ${createWorkArea(student, 'work3')}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="works-category">
+                            <div class="category-title">Проверки</div>
+                            <div class="works-row">
+                                <div class="upload-areas">
+                                    ${createWorkArea(student, 'check1')}
+                                    ${createWorkArea(student, 'check2')}
+                                    ${createWorkArea(student, 'check3')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                worksList.appendChild(workItem);
+            });
+        }
+
+        function createWorkArea(student, workType) {
+            const workKey = `${student}_${workType}`;
+            const workData = studentWorks[workKey];
+            
+            if (workData && workData.image) {
+                return `
+                    <div class="upload-area has-work">
+                        <img src="${workData.image}" class="work-preview" alt="${workType}" onclick="openFullscreen('${workData.image}')">
+                        <div class="work-number">${getWorkTitle(workType)}</div>
+                        <div class="upload-time">${formatDateTime(workData.timestamp)}</div>
+                        <button class="delete-btn" onclick="deleteWork('${student}', '${workType}')">🗑️ Удалить</button>
+                        <input type="file" class="file-input" accept="image/*" onchange="handleWorkUpload(this, '${student}', '${workType}')">
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="upload-area" onclick="triggerWorkUpload(this, '${student}', '${workType}')">
+                        <div class="work-number">${getWorkTitle(workType)}</div>
+                        <div class="upload-text">Нажмите для загрузки</div>
+                        <input type="file" class="file-input" accept="image/*" onchange="handleWorkUpload(this, '${student}', '${workType}')">
+                    </div>
+                `;
+            }
+        }
+
+        function formatDateTime(timestamp) {
+            if (!timestamp) return '';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            
+            return `Загружено: ${day}.${month}.${year} ${hours}:${minutes}`;
+        }
+
+        function getWorkTitle(workType) {
+            const titles = {
+                'work1': 'Работа 1', 'work2': 'Работа 2', 'work3': 'Работа 3',
+                'check1': 'Проверка 1', 'check2': 'Проверка 2', 'check3': 'Проверка 3'
+            };
+            return titles[workType] || workType;
+        }
+
+        function triggerAvatarUpload(avatarContainer) {
+            const fileInput = avatarContainer.querySelector('.file-input');
+            fileInput.click();
+        }
+
+        function handleAvatarUpload(input) {
+            const file = input.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const avatarContainer = input.parentElement;
+                    avatarContainer.innerHTML = `
+                        <img src="${e.target.result}" class="avatar-preview" alt="Аватар">
+                        <input type="file" class="file-input" accept="image/*" onchange="handleAvatarUpload(this)" style="display: none;">
+                    `;
+                    
+                    const avatarImg = avatarContainer.querySelector('.avatar-preview');
+                    avatarImg.style.cursor = 'pointer';
+                    avatarImg.onclick = function() {
+                        triggerAvatarUpload(avatarContainer);
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function triggerWorkUpload(areaElement, student, workType) {
+            const fileInput = areaElement.querySelector('.file-input');
+            fileInput.click();
+        }
+
+        function handleWorkUpload(input, student, workType) {
+            const file = input.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    saveWork(student, workType, e.target.result);
+                    initializeWorksPage();
+                    alert('Работа успешно загружена!');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Пожалуйста, выберите файл изображения');
+            }
+        }
+
+        function openFullscreen(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('fullscreenImage');
+            modal.style.display = 'block';
+            modalImg.src = imageSrc;
+            
+            modal.onclick = function(event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            };
+            
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeModal();
+                }
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+    </script>
+</body>
+</html>
