@@ -547,9 +547,23 @@
         };
 
         // Инициализируем Firebase
-        firebase.initializeApp(firebaseConfig);
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log('✅ Firebase инициализирован');
+        } catch (error) {
+            console.log('Firebase уже инициализирован');
+        }
+
         const db = firebase.firestore();
         const storage = firebase.storage();
+
+        // Проверяем подключение к Storage
+        try {
+            const testRef = storage.ref();
+            console.log('✅ Storage подключен');
+        } catch (error) {
+            console.error('❌ Ошибка Storage:', error);
+        }
 
         // Данные для рейтингов
         const rating1Titles = [
@@ -665,15 +679,51 @@
             if (file && file.type.startsWith('image/')) {
                 try {
                     updateSyncStatus('🔄 Загрузка изображения...');
+                    console.log('Начало загрузки:', file.name, file.size);
+                    
+                    // Проверяем размер файла (увеличил лимит)
+                    if (file.size > 10 * 1024 * 1024) { // 10MB лимит
+                        throw new Error('Файл слишком большой. Максимум 10MB');
+                    }
                     
                     // Создаем уникальное имя файла
-                    const fileName = `${student}_${workType}_${Date.now()}.jpg`;
+                    const fileName = `${student}_${workType}_${Date.now()}_${Math.random().toString(36).substring(2, 15)}.jpg`;
                     const storageRef = storage.ref().child('works/' + fileName);
                     
-                    // Загружаем в Storage
-                    const snapshot = await storageRef.put(file);
+                    console.log('Попытка загрузки в Storage...');
+                    
+                    // Добавляем обработку прогресса и таймаут
+                    const uploadTask = storageRef.put(file);
+                    
+                    // Ждем завершения загрузки
+                    const snapshot = await new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => {
+                            reject(new Error('Таймаут загрузки (30 секунд)'));
+                        }, 30000);
+                        
+                        uploadTask.on('state_changed',
+                            (snapshot) => {
+                                // Прогресс загрузки
+                                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                console.log('Прогресс загрузки: ' + progress + '%');
+                                updateSyncStatus('🔄 Загрузка: ' + Math.round(progress) + '%');
+                            },
+                            (error) => {
+                                clearTimeout(timeout);
+                                reject(error);
+                            },
+                            () => {
+                                clearTimeout(timeout);
+                                resolve(uploadTask.snapshot);
+                            }
+                        );
+                    });
+                    
+                    console.log('✅ Файл загружен в Storage');
+                    
                     // Получаем URL для скачивания
                     const downloadURL = await snapshot.ref.getDownloadURL();
+                    console.log('📎 Получен URL:', downloadURL);
                     
                     // Сохраняем URL в Firestore
                     await saveWork(student, workType, downloadURL);
@@ -681,12 +731,27 @@
                     updateSyncStatus('✅ Изображение загружено!');
                     
                 } catch (error) {
-                    console.error('Ошибка загрузки:', error);
-                    updateSyncStatus('❌ Ошибка загрузки', false);
-                    alert('Ошибка загрузки изображения: ' + error.message);
+                    console.error('❌ КРИТИЧЕСКАЯ Ошибка загрузки:', error);
+                    console.error('🔍 Детали ошибки:', {
+                        message: error.message,
+                        code: error.code,
+                        name: error.name
+                    });
+                    
+                    let errorMessage = 'Ошибка загрузки';
+                    if (error.message.includes('permission') || error.message.includes('403')) {
+                        errorMessage = 'Ошибка доступа к Storage. Проверьте настройки Firebase';
+                    } else if (error.message.includes('timeout')) {
+                        errorMessage = 'Таймаут загрузки. Проверьте интернет';
+                    } else if (error.message.includes('size')) {
+                        errorMessage = 'Файл слишком большой';
+                    }
+                    
+                    updateSyncStatus('❌ ' + errorMessage, false);
+                    alert('❌ ' + errorMessage + '\n\nДетали: ' + error.message);
                 }
             } else {
-                alert('Пожалуйста, выберите файл изображения');
+                alert('Пожалуйста, выберите файл изображения (JPEG, PNG, GIF)');
             }
         }
 
