@@ -532,6 +532,7 @@
     <!-- Подключаем Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
     <script>
         // === КОНФИГУРАЦИЯ FIREBASE С ВАШИМИ КЛЮЧАМИ ===
@@ -548,6 +549,7 @@
         // Инициализируем Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const storage = firebase.storage();
 
         // Данные для рейтингов
         const rating1Titles = [
@@ -629,19 +631,18 @@
             }
         }
 
-        // Сохранение работы
-        async function saveWork(student, workType, imageData) {
+        // Сохранение работы (только URL в Firestore)
+        async function saveWork(student, workType, imageUrl) {
             const workKey = `${student}_${workType}`;
             try {
-                updateSyncStatus('🔄 Сохранение работы...');
                 await db.collection('works').doc(workKey).set({
-                    image: imageData,
+                    image: imageUrl,
                     student: student,
                     workType: workType,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 studentWorks[workKey] = {
-                    image: imageData,
+                    image: imageUrl,
                     timestamp: new Date().toISOString()
                 };
                 updateSyncStatus('✅ Работа сохранена');
@@ -651,10 +652,41 @@
                 
                 // Fallback
                 studentWorks[workKey] = {
-                    image: imageData,
+                    image: imageUrl,
                     timestamp: new Date().toISOString()
                 };
                 localStorage.setItem('studentWorks', JSON.stringify(studentWorks));
+            }
+        }
+
+        // Загрузка изображения в Storage
+        async function handleWorkUpload(input, student, workType) {
+            const file = input.files[0];
+            if (file && file.type.startsWith('image/')) {
+                try {
+                    updateSyncStatus('🔄 Загрузка изображения...');
+                    
+                    // Создаем уникальное имя файла
+                    const fileName = `${student}_${workType}_${Date.now()}.jpg`;
+                    const storageRef = storage.ref().child('works/' + fileName);
+                    
+                    // Загружаем в Storage
+                    const snapshot = await storageRef.put(file);
+                    // Получаем URL для скачивания
+                    const downloadURL = await snapshot.ref.getDownloadURL();
+                    
+                    // Сохраняем URL в Firestore
+                    await saveWork(student, workType, downloadURL);
+                    initializeWorksPage();
+                    updateSyncStatus('✅ Изображение загружено!');
+                    
+                } catch (error) {
+                    console.error('Ошибка загрузки:', error);
+                    updateSyncStatus('❌ Ошибка загрузки', false);
+                    alert('Ошибка загрузки изображения: ' + error.message);
+                }
+            } else {
+                alert('Пожалуйста, выберите файл изображения');
             }
         }
 
@@ -663,10 +695,20 @@
             const workKey = `${student}_${workType}`;
             if (confirm('Вы уверены, что хотите удалить эту работу?')) {
                 try {
+                    const workData = studentWorks[workKey];
+                    
+                    // Если работа загружена в Storage - удаляем оттуда
+                    if (workData && workData.image && workData.image.startsWith('https://')) {
+                        const storageRef = storage.refFromURL(workData.image);
+                        await storageRef.delete();
+                    }
+                    
+                    // Удаляем запись из Firestore
                     await db.collection('works').doc(workKey).delete();
                     delete studentWorks[workKey];
                     initializeWorksPage();
                     updateSyncStatus('✅ Работа удалена');
+                    
                 } catch (error) {
                     console.error('Ошибка удаления:', error);
                     // Fallback
@@ -842,21 +884,6 @@
         function triggerWorkUpload(areaElement, student, workType) {
             const fileInput = areaElement.querySelector('.file-input');
             fileInput.click();
-        }
-
-        function handleWorkUpload(input, student, workType) {
-            const file = input.files[0];
-            if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    saveWork(student, workType, e.target.result);
-                    initializeWorksPage();
-                    alert('Работа успешно загружена!');
-                };
-                reader.readAsDataURL(file);
-            } else {
-                alert('Пожалуйста, выберите файл изображения');
-            }
         }
 
         function openFullscreen(imageSrc) {
