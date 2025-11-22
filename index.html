@@ -86,19 +86,20 @@
             transform: translateY(-2px);
         }
 
-        /* ЗАМЕНИЛИ АВАТАРКИ НА ПОЛЕ ВВОДА ИМЕНИ */
+        /* УВЕЛИЧИЛИ ПОЛЕ ДЛЯ ИМЕНИ */
         .name-input-container {
-            width: 50px;
+            min-width: 80px;
             height: 50px;
-            border-radius: 50%;
             background: #e9ecef;
             display: flex;
             align-items: center;
             justify-content: center;
             border: 2px solid #667eea;
+            border-radius: 8px;
             cursor: pointer;
             flex-shrink: 0;
             transition: all 0.2s ease;
+            padding: 5px;
         }
 
         .name-input-container:hover {
@@ -117,12 +118,11 @@
             border: none;
             background: transparent;
             text-align: center;
-            font-size: 0.7em;
+            font-size: 0.9em;
             font-weight: bold;
             color: #2c3e50;
             cursor: pointer;
-            border-radius: 50%;
-            padding: 5px;
+            border-radius: 6px;
         }
 
         .name-input:focus {
@@ -133,7 +133,7 @@
 
         .name-input::placeholder {
             color: #6c757d;
-            font-size: 0.6em;
+            font-size: 0.8em;
         }
 
         .student-info {
@@ -462,7 +462,7 @@
             }
             
             .name-input-container {
-                width: 45px;
+                min-width: 70px;
                 height: 45px;
             }
             
@@ -592,7 +592,7 @@
         // Хранилища для данных
         let studentNotes = {};
         let studentWorks = {};
-        let studentNames = {}; // НОВОЕ: храним имена для рейтингов
+        let studentNames = {};
 
         // Функция обновления статуса синхронизации
         function updateSyncStatus(message, isSuccess = true) {
@@ -659,7 +659,7 @@
             }
         }
 
-        // НОВАЯ ФУНКЦИЯ: Сохранение имени в рейтинге
+        // Сохранение имени в рейтинге
         async function saveRatingName(ratingType, position, name) {
             const key = `${ratingType}_${position}`;
             try {
@@ -679,7 +679,7 @@
             }
         }
 
-        // Сохранение работы (Base64 в Firestore)
+        // Сохранение работы (Base64 в Firestore) - УВЕЛИЧИЛИ ЛИМИТ ДО 4MB
         async function saveWork(student, workType, imageBase64) {
             const workKey = `${student}_${workType}`;
             try {
@@ -707,16 +707,16 @@
             }
         }
 
-        // Загрузка изображения (Base64 в Firestore)
+        // Загрузка изображения (Base64 в Firestore) - УВЕЛИЧИЛИ ЛИМИТ ДО 4MB
         async function handleWorkUpload(input, student, workType) {
             const file = input.files[0];
             if (file && file.type.startsWith('image/')) {
                 try {
                     updateSyncStatus('🔄 Загрузка изображения...');
                     
-                    // Проверяем размер файла
-                    if (file.size > 1 * 1024 * 1024) { // 1MB лимит для Base64
-                        throw new Error('Файл слишком большой. Максимум 1MB');
+                    // УВЕЛИЧИЛИ ЛИМИТ ДО 4MB
+                    if (file.size > 4 * 1024 * 1024) {
+                        throw new Error('Файл слишком большой. Максимум 4MB');
                     }
                     
                     // Конвертируем в Base64
@@ -794,7 +794,7 @@
             });
         }
 
-        // ОБНОВЛЕННАЯ ФУНКЦИЯ: создаем элемент рейтинга с полем ввода имени
+        // Создаем элемент рейтинга с полем ввода имени
         function createRatingItem(place, title, ratingType) {
             const item = document.createElement('div');
             item.className = 'student-item';
@@ -807,9 +807,9 @@
                     <input 
                         type="text" 
                         class="name-input" 
-                        placeholder="Имя" 
+                        placeholder="Введите имя" 
                         value="${savedName}"
-                        maxlength="8"
+                        maxlength="15"
                         oninput="saveRatingName('${ratingType}', ${place}, this.value)"
                     >
                 </div>
