@@ -86,7 +86,8 @@
             transform: translateY(-2px);
         }
 
-        .avatar-container {
+        /* ЗАМЕНИЛИ АВАТАРКИ НА ПОЛЕ ВВОДА ИМЕНИ */
+        .name-input-container {
             width: 50px;
             height: 50px;
             border-radius: 50%;
@@ -94,24 +95,45 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
             border: 2px solid #667eea;
             cursor: pointer;
             flex-shrink: 0;
+            transition: all 0.2s ease;
         }
 
-        .avatar-preview {
+        .name-input-container:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .name-input-container:focus-within {
+            background: #667eea;
+            color: white;
+        }
+
+        .name-input {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            border: none;
+            background: transparent;
+            text-align: center;
+            font-size: 0.7em;
+            font-weight: bold;
+            color: #2c3e50;
+            cursor: pointer;
             border-radius: 50%;
+            padding: 5px;
         }
 
-        .avatar-placeholder {
+        .name-input:focus {
+            outline: none;
+            background: #667eea;
+            color: white;
+        }
+
+        .name-input::placeholder {
             color: #6c757d;
-            font-size: 0.7em;
-            text-align: center;
-            padding: 5px;
+            font-size: 0.6em;
         }
 
         .student-info {
@@ -439,7 +461,7 @@
                 padding: 10px;
             }
             
-            .avatar-container {
+            .name-input-container {
                 width: 45px;
                 height: 45px;
             }
@@ -529,13 +551,12 @@
         <img class="modal-content" id="fullscreenImage">
     </div>
 
-    <!-- Подключаем Firebase -->
+    <!-- Подключаем Firebase (ТОЛЬКО Firestore) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
     <script>
-        // === КОНФИГУРАЦИЯ FIREBASE С ВАШИМИ КЛЮЧАМИ ===
+        // === КОНФИГУРАЦИЯ FIREBASE (БЕЗ STORAGE) ===
         const firebaseConfig = {
             apiKey: "AIzaSyA1gMGXixXqfgptc0-Nx5fRWCbS2lefXLY",
             authDomain: "global-elite-club-dcd0d.firebaseapp.com",
@@ -546,24 +567,9 @@
             measurementId: "G-3MTEVE62XT"
         };
 
-        // Инициализируем Firebase
-        try {
-            firebase.initializeApp(firebaseConfig);
-            console.log('✅ Firebase инициализирован');
-        } catch (error) {
-            console.log('Firebase уже инициализирован');
-        }
-
+        // Инициализируем Firebase (только Firestore)
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const storage = firebase.storage();
-
-        // Проверяем подключение к Storage
-        try {
-            const testRef = storage.ref();
-            console.log('✅ Storage подключен');
-        } catch (error) {
-            console.error('❌ Ошибка Storage:', error);
-        }
 
         // Данные для рейтингов
         const rating1Titles = [
@@ -586,6 +592,7 @@
         // Хранилища для данных
         let studentNotes = {};
         let studentWorks = {};
+        let studentNames = {}; // НОВОЕ: храним имена для рейтингов
 
         // Функция обновления статуса синхронизации
         function updateSyncStatus(message, isSuccess = true) {
@@ -612,9 +619,15 @@
                 worksSnapshot.forEach(doc => {
                     studentWorks[doc.id] = doc.data();
                 });
+
+                // Загружаем имена для рейтингов
+                const namesSnapshot = await db.collection('ratingNames').get();
+                studentNames = {};
+                namesSnapshot.forEach(doc => {
+                    studentNames[doc.id] = doc.data().name;
+                });
                 
                 updateSyncStatus('✅ Данные загружены');
-                console.log('Данные загружены:', { notes: studentNotes, works: studentWorks });
                 
             } catch (error) {
                 console.error('Ошибка загрузки данных:', error);
@@ -623,6 +636,7 @@
                 // Fallback на localStorage
                 studentNotes = JSON.parse(localStorage.getItem('studentNotes')) || {};
                 studentWorks = JSON.parse(localStorage.getItem('studentWorks')) || {};
+                studentNames = JSON.parse(localStorage.getItem('studentNames')) || {};
             }
         }
 
@@ -645,18 +659,38 @@
             }
         }
 
-        // Сохранение работы (только URL в Firestore)
-        async function saveWork(student, workType, imageUrl) {
+        // НОВАЯ ФУНКЦИЯ: Сохранение имени в рейтинге
+        async function saveRatingName(ratingType, position, name) {
+            const key = `${ratingType}_${position}`;
+            try {
+                await db.collection('ratingNames').doc(key).set({
+                    name: name,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                studentNames[key] = name;
+                updateSyncStatus('✅ Имя сохранено');
+            } catch (error) {
+                console.error('Ошибка сохранения имени:', error);
+                updateSyncStatus('❌ Ошибка сохранения', false);
+                
+                // Fallback
+                studentNames[key] = name;
+                localStorage.setItem('studentNames', JSON.stringify(studentNames));
+            }
+        }
+
+        // Сохранение работы (Base64 в Firestore)
+        async function saveWork(student, workType, imageBase64) {
             const workKey = `${student}_${workType}`;
             try {
                 await db.collection('works').doc(workKey).set({
-                    image: imageUrl,
+                    image: imageBase64,
                     student: student,
                     workType: workType,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 studentWorks[workKey] = {
-                    image: imageUrl,
+                    image: imageBase64,
                     timestamp: new Date().toISOString()
                 };
                 updateSyncStatus('✅ Работа сохранена');
@@ -666,92 +700,47 @@
                 
                 // Fallback
                 studentWorks[workKey] = {
-                    image: imageUrl,
+                    image: imageBase64,
                     timestamp: new Date().toISOString()
                 };
                 localStorage.setItem('studentWorks', JSON.stringify(studentWorks));
             }
         }
 
-        // Загрузка изображения в Storage
+        // Загрузка изображения (Base64 в Firestore)
         async function handleWorkUpload(input, student, workType) {
             const file = input.files[0];
             if (file && file.type.startsWith('image/')) {
                 try {
                     updateSyncStatus('🔄 Загрузка изображения...');
-                    console.log('Начало загрузки:', file.name, file.size);
                     
-                    // Проверяем размер файла (увеличил лимит)
-                    if (file.size > 10 * 1024 * 1024) { // 10MB лимит
-                        throw new Error('Файл слишком большой. Максимум 10MB');
+                    // Проверяем размер файла
+                    if (file.size > 1 * 1024 * 1024) { // 1MB лимит для Base64
+                        throw new Error('Файл слишком большой. Максимум 1MB');
                     }
                     
-                    // Создаем уникальное имя файла
-                    const fileName = `${student}_${workType}_${Date.now()}_${Math.random().toString(36).substring(2, 15)}.jpg`;
-                    const storageRef = storage.ref().child('works/' + fileName);
-                    
-                    console.log('Попытка загрузки в Storage...');
-                    
-                    // Добавляем обработку прогресса и таймаут
-                    const uploadTask = storageRef.put(file);
-                    
-                    // Ждем завершения загрузки
-                    const snapshot = await new Promise((resolve, reject) => {
-                        const timeout = setTimeout(() => {
-                            reject(new Error('Таймаут загрузки (30 секунд)'));
-                        }, 30000);
-                        
-                        uploadTask.on('state_changed',
-                            (snapshot) => {
-                                // Прогресс загрузки
-                                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                                console.log('Прогресс загрузки: ' + progress + '%');
-                                updateSyncStatus('🔄 Загрузка: ' + Math.round(progress) + '%');
-                            },
-                            (error) => {
-                                clearTimeout(timeout);
-                                reject(error);
-                            },
-                            () => {
-                                clearTimeout(timeout);
-                                resolve(uploadTask.snapshot);
-                            }
-                        );
+                    // Конвертируем в Base64
+                    const imageBase64 = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
                     });
                     
-                    console.log('✅ Файл загружен в Storage');
+                    console.log('Изображение конвертировано в Base64');
                     
-                    // Получаем URL для скачивания
-                    const downloadURL = await snapshot.ref.getDownloadURL();
-                    console.log('📎 Получен URL:', downloadURL);
-                    
-                    // Сохраняем URL в Firestore
-                    await saveWork(student, workType, downloadURL);
+                    // Сохраняем Base64 в Firestore
+                    await saveWork(student, workType, imageBase64);
                     initializeWorksPage();
                     updateSyncStatus('✅ Изображение загружено!');
                     
                 } catch (error) {
-                    console.error('❌ КРИТИЧЕСКАЯ Ошибка загрузки:', error);
-                    console.error('🔍 Детали ошибки:', {
-                        message: error.message,
-                        code: error.code,
-                        name: error.name
-                    });
-                    
-                    let errorMessage = 'Ошибка загрузки';
-                    if (error.message.includes('permission') || error.message.includes('403')) {
-                        errorMessage = 'Ошибка доступа к Storage. Проверьте настройки Firebase';
-                    } else if (error.message.includes('timeout')) {
-                        errorMessage = 'Таймаут загрузки. Проверьте интернет';
-                    } else if (error.message.includes('size')) {
-                        errorMessage = 'Файл слишком большой';
-                    }
-                    
-                    updateSyncStatus('❌ ' + errorMessage, false);
-                    alert('❌ ' + errorMessage + '\n\nДетали: ' + error.message);
+                    console.error('Ошибка загрузки:', error);
+                    updateSyncStatus('❌ Ошибка: ' + error.message, false);
+                    alert('Ошибка загрузки: ' + error.message);
                 }
             } else {
-                alert('Пожалуйста, выберите файл изображения (JPEG, PNG, GIF)');
+                alert('Пожалуйста, выберите файл изображения');
             }
         }
 
@@ -760,14 +749,6 @@
             const workKey = `${student}_${workType}`;
             if (confirm('Вы уверены, что хотите удалить эту работу?')) {
                 try {
-                    const workData = studentWorks[workKey];
-                    
-                    // Если работа загружена в Storage - удаляем оттуда
-                    if (workData && workData.image && workData.image.startsWith('https://')) {
-                        const storageRef = storage.refFromURL(workData.image);
-                        await storageRef.delete();
-                    }
-                    
                     // Удаляем запись из Firestore
                     await db.collection('works').doc(workKey).delete();
                     delete studentWorks[workKey];
@@ -797,25 +778,40 @@
             const rating1List = document.getElementById('rating1List');
             const rating2List = document.getElementById('rating2List');
 
+            rating1List.innerHTML = '';
+            rating2List.innerHTML = '';
+
+            // Первый рейтинг
             rating1Titles.forEach((title, index) => {
-                const studentItem = createRatingItem(index + 1, title);
+                const studentItem = createRatingItem(index + 1, title, 'rating1');
                 rating1List.appendChild(studentItem);
             });
 
+            // Второй рейтинг
             rating2Titles.forEach((title, index) => {
-                const studentItem = createRatingItem(index + 1, title);
+                const studentItem = createRatingItem(index + 1, title, 'rating2');
                 rating2List.appendChild(studentItem);
             });
         }
 
-        function createRatingItem(place, title) {
+        // ОБНОВЛЕННАЯ ФУНКЦИЯ: создаем элемент рейтинга с полем ввода имени
+        function createRatingItem(place, title, ratingType) {
             const item = document.createElement('div');
             item.className = 'student-item';
             
+            const nameKey = `${ratingType}_${place}`;
+            const savedName = studentNames[nameKey] || '';
+            
             item.innerHTML = `
-                <div class="avatar-container" onclick="triggerAvatarUpload(this)">
-                    <div class="avatar-placeholder">Аватар</div>
-                    <input type="file" class="file-input" accept="image/*" onchange="handleAvatarUpload(this)">
+                <div class="name-input-container">
+                    <input 
+                        type="text" 
+                        class="name-input" 
+                        placeholder="Имя" 
+                        value="${savedName}"
+                        maxlength="8"
+                        oninput="saveRatingName('${ratingType}', ${place}, this.value)"
+                    >
                 </div>
                 <div class="student-info">
                     <div class="student-name">${place} место</div>
@@ -918,32 +914,6 @@
                 'check1': 'Проверка 1', 'check2': 'Проверка 2', 'check3': 'Проверка 3'
             };
             return titles[workType] || workType;
-        }
-
-        function triggerAvatarUpload(avatarContainer) {
-            const fileInput = avatarContainer.querySelector('.file-input');
-            fileInput.click();
-        }
-
-        function handleAvatarUpload(input) {
-            const file = input.files[0];
-            if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const avatarContainer = input.parentElement;
-                    avatarContainer.innerHTML = `
-                        <img src="${e.target.result}" class="avatar-preview" alt="Аватар">
-                        <input type="file" class="file-input" accept="image/*" onchange="handleAvatarUpload(this)" style="display: none;">
-                    `;
-                    
-                    const avatarImg = avatarContainer.querySelector('.avatar-preview');
-                    avatarImg.style.cursor = 'pointer';
-                    avatarImg.onclick = function() {
-                        triggerAvatarUpload(avatarContainer);
-                    };
-                };
-                reader.readAsDataURL(file);
-            }
         }
 
         function triggerWorkUpload(areaElement, student, workType) {
