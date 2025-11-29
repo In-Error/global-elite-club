@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Рейтинг учеников v2.0</title>
+    <title>Рейтинг учеников v2.2</title>
     <style>
         * {
             margin: 0;
@@ -210,6 +210,113 @@
             line-height: 1.2;
         }
 
+        /* НОВЫЕ СТИЛИ ДЛЯ ГРИДА УЧЕНИКОВ */
+        .students-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .student-card {
+            background: #1a1a1a;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 120px;
+        }
+
+        .student-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+            border-color: #ffd700;
+        }
+
+        .student-card.active {
+            border-color: #ffd700;
+            background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.7);
+        }
+
+        .student-card-name {
+            font-weight: bold;
+            color: #ffd700;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+        }
+
+        .student-card-words {
+            font-size: 0.8em;
+            color: #aaa;
+            background: #333;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-top: 5px;
+        }
+
+        .student-works-section {
+            display: none;
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 2px solid #333;
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .student-works-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .selected-student-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #333;
+        }
+
+        .selected-student-name {
+            font-weight: bold;
+            color: #ffd700;
+            font-size: 1.3em;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .close-works {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 8px rgba(220, 53, 69, 0.5);
+        }
+
+        .close-works:hover {
+            background: #c82333;
+            box-shadow: 0 0 12px rgba(220, 53, 69, 0.7);
+            transform: scale(1.05);
+        }
+
         .file-input {
             display: none;
         }
@@ -257,46 +364,8 @@
             box-shadow: 0 0 8px rgba(102, 126, 234, 0.4);
         }
 
-        .works-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .work-item {
-            background: #1a1a1a;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            border: 1px solid #333;
-        }
-
-        .student-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #333;
-        }
-
-        @media (min-width: 768px) {
-            .student-header {
-                align-items: center;
-            }
-        }
-
-        .student-name-large {
-            font-weight: bold;
-            color: #fff;
-            font-size: 1em;
-            min-width: 120px;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
-        }
-
         /* СТИЛИ ДЛЯ СИСТЕМЫ СЛОВ */
         .words-container {
-            flex: 1;
             display: flex;
             align-items: center;
             gap: 20px;
@@ -305,6 +374,7 @@
             border-radius: 8px;
             box-shadow: 0 0 15px rgba(220, 53, 69, 0.4);
             border: 2px solid #dc3545;
+            margin-bottom: 20px;
         }
 
         /* Счетчик слов - первый элемент */
@@ -477,7 +547,7 @@
         .works-container {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 20px;
         }
 
         .works-row {
@@ -493,16 +563,16 @@
         }
 
         .works-category {
-            margin-bottom: 8px;
+            margin-bottom: 15px;
         }
 
         .category-title {
             font-weight: bold;
             color: #fff;
-            margin-bottom: 8px;
-            font-size: 0.95em;
-            padding: 3px 0;
-            border-bottom: 1px solid #667eea;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+            padding: 5px 0;
+            border-bottom: 2px solid #667eea;
             text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
         }
 
@@ -600,16 +670,6 @@
             margin-bottom: 3px;
             font-size: 0.85em;
             text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
-        }
-
-        /* Увеличиваем шрифт имен в 2 раза */
-        .student-name-large {
-            font-weight: bold;
-            color: #ffd700 !important;
-            font-size: 1.2em !important;
-            min-width: 120px;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.7) !important;
-            font-weight: 900;
         }
 
         .upload-time {
@@ -746,108 +806,37 @@
         }
 
         @media (max-width: 768px) {
-            .student-item {
-                padding: 10px;
-            }
-            
-            .work-item {
-                padding: 12px;
-            }
-            
-            .upload-area {
-                padding: 12px;
-                min-height: 150px;
-            }
-            
-            .nav-btn {
-                padding: 12px 15px;
-                font-size: 0.85em;
-            }
-            
-            header {
-                padding: 15px 10px;
-            }
-            
-            h1 {
-                font-size: 1.3em;
-            }
-            
-            .student-header {
-                flex-direction: column;
+            .students-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
                 gap: 10px;
             }
             
+            .student-card {
+                padding: 15px 10px;
+                min-height: 100px;
+            }
+            
+            .student-card-name {
+                font-size: 1em;
+            }
+            
             .words-container {
-                width: 100%;
                 flex-direction: column;
                 gap: 15px;
             }
             
-            .word-input-container {
+            .word-input {
                 width: 100%;
-                justify-content: center;
-            }
-            
-            .word-input {
-                width: 200px;
             }
         }
 
-        @media (max-width: 360px) {
-            .page {
-                padding: 10px;
-            }
-            
-            .rating-section {
-                padding: 10px;
-            }
-            
-            .name-input-container {
-                min-width: 70px;
-                height: 45px;
-            }
-            
-            .student-name {
-                font-size: 0.85em;
-            }
-            
-            .student-title {
-                font-size: 0.75em;
-            }
-            
-            .word-input {
-                font-size: 0.75em;
-                padding: 6px;
-                width: 150px;
-            }
-            
-            .upload-time {
-                font-size: 0.65em;
-            }
-            
-            .delete-btn {
-                padding: 4px 8px;
-                font-size: 0.7em;
-            }
-            
-            .nav-arrow {
-                width: 28px;
-                height: 28px;
-                font-size: 0.8em;
-            }
-            
-            .current-word-display {
-                font-size: 0.85em;
-                min-height: 35px;
-                min-width: 120px;
-            }
-            
-            .student-name-large {
-                font-size: 1.1em !important;
+        @media (max-width: 480px) {
+            .students-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
 
-        .student-item, .nav-btn, .upload-area {
+        .student-item, .nav-btn, .upload-area, .student-card {
             -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
@@ -878,7 +867,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>🏆 Рейтинг учеников v2.0</h1>
+            <h1>🏆 Рейтинг учеников v2.2</h1>
             <p style="font-size: 0.9em; text-shadow: 0 0 5px rgba(255,255,255,0.3);">Система оценки и мониторинга успехов</p>
             <div class="sync-status" id="syncStatus">🔄 Синхронизация...</div>
         </header>
@@ -896,7 +885,7 @@
             </div>
 
             <div class="nav-buttons">
-                <button class="nav-btn" onclick="showPage('worksPage')">📚 Просмотр работ</button>
+                <button class="nav-btn" onclick="showPage('worksPage')">📚 Работы учеников</button>
             </div>
         </div>
 
@@ -906,7 +895,17 @@
                 <input type="date" class="date-input" id="workDate">
             </div>
 
-            <div class="works-list" id="worksList"></div>
+            <!-- Сетка учеников -->
+            <div class="students-grid" id="studentsGrid"></div>
+
+            <!-- Секция работ выбранного ученика -->
+            <div class="student-works-section" id="studentWorksSection">
+                <div class="selected-student-header">
+                    <div class="selected-student-name" id="selectedStudentName"></div>
+                    <button class="close-works" onclick="closeStudentWorks()">✕ Закрыть</button>
+                </div>
+                <div id="worksList"></div>
+            </div>
 
             <div class="nav-buttons">
                 <button class="nav-btn" onclick="showPage('mainPage')">⭐ К рейтингам</button>
@@ -963,6 +962,7 @@
         let studentWorks = {};
         let studentNames = {};
         let additionalWorks = {};
+        let currentSelectedStudent = null;
 
         // Функция обновления статуса синхронизации
         function updateSyncStatus(message, isSuccess = true) {
@@ -1114,7 +1114,10 @@
             if (word.trim() && !words.includes(word.trim())) {
                 words.push(word.trim());
                 await saveWords(studentName, words);
-                initializeWorksPage();
+                if (currentSelectedStudent === studentName) {
+                    initializeStudentWorks(studentName);
+                }
+                initializeStudentsGrid();
             }
         }
 
@@ -1127,7 +1130,10 @@
                     if (confirm(`Удалить слово "${words[currentIndex]}"?`)) {
                         words.splice(currentIndex, 1);
                         await saveWords(studentName, words);
-                        initializeWorksPage();
+                        if (currentSelectedStudent === studentName) {
+                            initializeStudentWorks(studentName);
+                        }
+                        initializeStudentsGrid();
                     }
                 }
             }
@@ -1143,7 +1149,9 @@
                 name: `${workType === 'work' ? 'Работа' : 'Проверка'} ${newWorkNumber}`
             });
             await saveAdditionalWorks(studentName, works);
-            initializeWorksPage();
+            if (currentSelectedStudent === studentName) {
+                initializeStudentWorks(studentName);
+            }
         }
 
         // Сохранение имени в рейтинге
@@ -1230,7 +1238,9 @@
                     
                     // Сохраняем сжатое изображение
                     await saveWork(student, workType, compressionResult.data, compressionInfo);
-                    initializeWorksPage();
+                    if (currentSelectedStudent === student) {
+                        initializeStudentWorks(student);
+                    }
                     updateSyncStatus('✅ Изображение загружено!');
                     
                 } catch (error) {
@@ -1251,7 +1261,9 @@
                     // Удаляем запись из Firestore
                     await db.collection('works').doc(workKey).delete();
                     delete studentWorks[workKey];
-                    initializeWorksPage();
+                    if (currentSelectedStudent === student) {
+                        initializeStudentWorks(student);
+                    }
                     updateSyncStatus('✅ Работа удалена');
                     
                 } catch (error) {
@@ -1259,7 +1271,9 @@
                     // Fallback
                     delete studentWorks[workKey];
                     localStorage.setItem('studentWorks', JSON.stringify(studentWorks));
-                    initializeWorksPage();
+                    if (currentSelectedStudent === student) {
+                        initializeStudentWorks(student);
+                    }
                     updateSyncStatus('✅ Работа удалена (локально)');
                 }
             }
@@ -1269,7 +1283,7 @@
         document.addEventListener('DOMContentLoaded', async function() {
             await loadAllData();
             initializeRatings();
-            initializeWorksPage();
+            initializeStudentsGrid();
             document.getElementById('workDate').valueAsDate = new Date();
         });
 
@@ -1323,55 +1337,91 @@
             return item;
         }
 
-        function initializeWorksPage() {
+        // Инициализация сетки учеников
+        function initializeStudentsGrid() {
+            const studentsGrid = document.getElementById('studentsGrid');
+            studentsGrid.innerHTML = '';
+            
+            students.forEach(student => {
+                const words = studentWords[student] || [];
+                const card = document.createElement('div');
+                card.className = `student-card ${currentSelectedStudent === student ? 'active' : ''}`;
+                card.innerHTML = `
+                    <div class="student-card-name">${student}</div>
+                    <div class="student-card-words">${words.length} words</div>
+                `;
+                card.onclick = () => openStudentWorks(student);
+                studentsGrid.appendChild(card);
+            });
+        }
+
+        // Открытие работ ученика
+        function openStudentWorks(student) {
+            currentSelectedStudent = student;
+            initializeStudentsGrid();
+            initializeStudentWorks(student);
+            
+            const section = document.getElementById('studentWorksSection');
+            section.classList.add('active');
+            document.getElementById('selectedStudentName').textContent = student;
+            
+            // Прокрутка к секции
+            section.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Закрытие работ ученика
+        function closeStudentWorks() {
+            currentSelectedStudent = null;
+            const section = document.getElementById('studentWorksSection');
+            section.classList.remove('active');
+            initializeStudentsGrid();
+        }
+
+        // Инициализация работ выбранного ученика
+        function initializeStudentWorks(student) {
             const worksList = document.getElementById('worksList');
             worksList.innerHTML = '';
             
-            students.forEach(student => {
-                const workItem = document.createElement('div');
-                workItem.className = 'work-item';
-                
-                workItem.innerHTML = `
-                    <div class="student-header">
-                        <div class="student-name-large">${student}</div>
-                        <div class="words-container">
-                            ${createWordsSection(student)}
+            const workItem = document.createElement('div');
+            workItem.className = 'work-item';
+            
+            workItem.innerHTML = `
+                <div class="words-container">
+                    ${createWordsSection(student)}
+                </div>
+                <div class="works-container">
+                    <div class="works-category">
+                        <div class="category-title">Основные работы</div>
+                        <div class="works-row">
+                            <div class="upload-areas">
+                                ${createWorkArea(student, 'work1')}
+                                ${createWorkArea(student, 'work2')}
+                                ${createWorkArea(student, 'work3')}
+                            </div>
+                        </div>
+                        <button class="add-work-btn" onclick="toggleAdditionalWorks('${student}', 'work')">+</button>
+                        <div class="additional-works" id="additionalWorks_${student}_work">
+                            ${createAdditionalWorks(student, 'work')}
                         </div>
                     </div>
-                    <div class="works-container">
-                        <div class="works-category">
-                            <div class="category-title">Основные работы</div>
-                            <div class="works-row">
-                                <div class="upload-areas">
-                                    ${createWorkArea(student, 'work1')}
-                                    ${createWorkArea(student, 'work2')}
-                                    ${createWorkArea(student, 'work3')}
-                                </div>
-                            </div>
-                            <button class="add-work-btn" onclick="toggleAdditionalWorks('${student}', 'work')">+</button>
-                            <div class="additional-works" id="additionalWorks_${student}_work">
-                                ${createAdditionalWorks(student, 'work')}
+                    <div class="works-category">
+                        <div class="category-title">Проверки</div>
+                        <div class="works-row">
+                            <div class="upload-areas">
+                                ${createWorkArea(student, 'check1')}
+                                ${createWorkArea(student, 'check2')}
+                                ${createWorkArea(student, 'check3')}
                             </div>
                         </div>
-                        <div class="works-category">
-                            <div class="category-title">Проверки</div>
-                            <div class="works-row">
-                                <div class="upload-areas">
-                                    ${createWorkArea(student, 'check1')}
-                                    ${createWorkArea(student, 'check2')}
-                                    ${createWorkArea(student, 'check3')}
-                                </div>
-                            </div>
-                            <button class="add-work-btn" onclick="toggleAdditionalWorks('${student}', 'check')">+</button>
-                            <div class="additional-works" id="additionalWorks_${student}_check">
-                                ${createAdditionalWorks(student, 'check')}
-                            </div>
+                        <button class="add-work-btn" onclick="toggleAdditionalWorks('${student}', 'check')">+</button>
+                        <div class="additional-works" id="additionalWorks_${student}_check">
+                            ${createAdditionalWorks(student, 'check')}
                         </div>
                     </div>
-                `;
-                
-                worksList.appendChild(workItem);
-            });
+                </div>
+            `;
+            
+            worksList.appendChild(workItem);
         }
 
         function createWordsSection(student) {
@@ -1406,6 +1456,7 @@
                     <input 
                         type="text" 
                         class="word-input" 
+                        id="wordInput_${student}"
                         placeholder="Add word"
                         onkeypress="handleWordInput(event, '${student}')"
                     >
@@ -1419,8 +1470,10 @@
                 const input = event.target;
                 const word = input.value.trim();
                 if (word) {
-                    addNewWord(student, word);
-                    input.value = ''; // Очищаем поле ввода
+                    addNewWord(student, word).then(() => {
+                        input.value = '';
+                        input.focus();
+                    });
                 }
                 event.preventDefault();
             }
@@ -1439,13 +1492,11 @@
             
             let newIndex = currentWordIndexes[student] + direction;
             
-            // Циклическая навигация
             if (newIndex < 0) newIndex = words.length - 1;
             if (newIndex >= words.length) newIndex = 0;
             
             currentWordIndexes[student] = newIndex;
             
-            // Обновляем отображение
             const displayElement = document.querySelector(`[onkeypress="handleWordInput(event, '${student}')"]`)
                 ?.closest('.words-container')
                 ?.querySelector('.current-word-display');
@@ -1457,7 +1508,6 @@
                     <button class="delete-word-btn" onclick="removeCurrentWord('${student}')" title="Удалить слово">×</button>
                 `;
                 
-                // Обновляем состояние кнопок навигации
                 const prevButton = displayElement.parentElement.querySelector('.nav-arrow:first-child');
                 const nextButton = displayElement.parentElement.querySelector('.nav-arrow:last-child');
                 
@@ -1469,7 +1519,6 @@
                     nextButton.disabled = false;
                 }
 
-                // Обновляем счетчик слов
                 const counterElement = displayElement.closest('.words-container').querySelector('.words-counter');
                 if (counterElement) {
                     counterElement.textContent = `${words.length} words`;
@@ -1482,7 +1531,6 @@
             const element = document.getElementById(`additionalWorks_${student}_${workType}`);
             element.classList.toggle('active');
             
-            // Добавляем новую работу при первом открытии, если их нет
             const works = additionalWorks[student] || [];
             const hasWorksOfType = works.filter(w => w.type === workType).length > 0;
             
@@ -1550,7 +1598,6 @@
         }
 
         function getWorkTitle(workType) {
-            // Для дополнительных работ типа "work4", "check5" и т.д.
             if (workType.startsWith('work') && workType.length > 4) {
                 const num = workType.substring(4);
                 return `Работа ${num}`;
@@ -1601,6 +1648,10 @@
             });
             document.getElementById(pageId).classList.add('active');
             window.scrollTo(0, 0);
+            
+            if (pageId === 'worksPage') {
+                closeStudentWorks();
+            }
         }
     </script>
 </body>
