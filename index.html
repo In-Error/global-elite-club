@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Рейтинг учеников v2.2</title>
+    <title>Рейтинг учеников v2.3</title>
     <style>
         * {
             margin: 0;
@@ -438,20 +438,28 @@
         }
 
         .current-word-display {
-            padding: 10px 15px;
+            padding: 15px 20px;
             background: #2d2d2d;
-            border-radius: 6px;
+            border-radius: 8px;
             border: 2px solid #dc3545;
-            font-size: 0.95em;
+            font-size: 1em;
             font-weight: bold;
-            min-width: 150px;
+            min-width: 180px;
             text-align: center;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 10px;
             position: relative;
             color: #fff;
             box-shadow: 0 0 10px rgba(220, 53, 69, 0.4);
+            min-height: 100px;
+        }
+
+        .word-text {
+            font-size: 1.1em;
+            margin-bottom: 5px;
         }
 
         .word-counter {
@@ -471,30 +479,25 @@
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
         }
 
+        /* НОВОЕ РАСПОЛОЖЕНИЕ КНОПКИ УДАЛЕНИЯ - ВНИЗУ ПОСЕРЕДИНЕ */
         .delete-word-btn {
-            position: absolute;
-            top: -8px;
-            left: -8px;
             background: #ff4444;
             color: #fff;
             border: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
+            padding: 8px 16px;
+            border-radius: 20px;
             cursor: pointer;
-            font-size: 0.7em;
+            font-size: 0.8em;
             font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             transition: all 0.2s ease;
-            box-shadow: 0 0 5px rgba(255, 68, 68, 0.5);
+            box-shadow: 0 0 8px rgba(255, 68, 68, 0.5);
+            margin-top: 5px;
         }
 
         .delete-word-btn:hover {
             background: #ff0000;
-            transform: scale(1.1);
-            box-shadow: 0 0 8px rgba(255, 0, 0, 0.7);
+            transform: scale(1.05);
+            box-shadow: 0 0 12px rgba(255, 0, 0, 0.7);
         }
 
         .no-words {
@@ -509,7 +512,7 @@
         .word-input-container {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             flex-shrink: 0;
         }
 
@@ -542,6 +545,20 @@
 
         .word-input::placeholder {
             color: #888;
+        }
+
+        /* Стили для кнопки добавления слова */
+        .word-input-container .nav-arrow {
+            background: #28a745;
+            box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
+            width: 36px;
+            height: 36px;
+            font-size: 1.1em;
+        }
+
+        .word-input-container .nav-arrow:hover {
+            background: #34ce57;
+            box-shadow: 0 0 12px rgba(52, 206, 87, 0.7);
         }
 
         .works-container {
@@ -828,11 +845,26 @@
             .word-input {
                 width: 100%;
             }
+            
+            .current-word-display {
+                min-width: 140px;
+                padding: 12px 15px;
+            }
+            
+            .delete-word-btn {
+                padding: 6px 12px;
+                font-size: 0.75em;
+            }
         }
 
         @media (max-width: 480px) {
             .students-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .current-word-display {
+                min-width: 120px;
+                padding: 10px 12px;
             }
         }
 
@@ -867,7 +899,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>🏆 Рейтинг учеников v2.2</h1>
+            <h1>🏆 Рейтинг учеников v2.3</h1>
             <p style="font-size: 0.9em; text-shadow: 0 0 5px rgba(255,255,255,0.3);">Система оценки и мониторинга успехов</p>
             <div class="sync-status" id="syncStatus">🔄 Синхронизация...</div>
         </header>
@@ -1441,9 +1473,9 @@
                         <button class="nav-arrow" onclick="navigateWord('${student}', -1)" ${words.length <= 1 ? 'disabled' : ''}>◀</button>
                         <div class="current-word-display">
                             ${hasWords ? 
-                                `<span>${words[currentIndex]}</span>
-                                 <div class="word-counter">${currentIndex + 1}</div>
-                                 <button class="delete-word-btn" onclick="removeCurrentWord('${student}')" title="Удалить слово">×</button>` 
+                                `<div class="word-text">${words[currentIndex]}</div>
+                                 <button class="delete-word-btn" onclick="removeCurrentWord('${student}')" title="Удалить слово">🗑️ Удалить</button>
+                                 <div class="word-counter">${currentIndex + 1}</div>` 
                                 : '<div class="no-words">No words added</div>'
                             }
                         </div>
@@ -1460,11 +1492,12 @@
                         placeholder="Add word"
                         onkeypress="handleWordInput(event, '${student}')"
                     >
+                    <button class="nav-arrow" onclick="addWordFromInput('${student}')" title="Добавить слово">+</button>
                 </div>
             `;
         }
 
-        // Обработка ввода слова
+        // Обработка ввода слова - ИСПРАВЛЕННАЯ ВЕРСИЯ
         function handleWordInput(event, student) {
             if (event.key === 'Enter') {
                 const input = event.target;
@@ -1472,10 +1505,25 @@
                 if (word) {
                     addNewWord(student, word).then(() => {
                         input.value = '';
-                        input.focus();
+                        // ВОТ ИСПРАВЛЕНИЕ - сохраняем ссылку на input и возвращаем фокус
+                        setTimeout(() => {
+                            input.focus();
+                        }, 0);
                     });
                 }
                 event.preventDefault();
+            }
+        }
+
+        // Добавление слова по кнопке
+        function addWordFromInput(student) {
+            const input = document.getElementById(`wordInput_${student}`);
+            const word = input.value.trim();
+            if (word) {
+                addNewWord(student, word).then(() => {
+                    input.value = '';
+                    input.focus();
+                });
             }
         }
 
@@ -1503,9 +1551,9 @@
                 
             if (displayElement) {
                 displayElement.innerHTML = `
-                    <span>${words[newIndex]}</span>
+                    <div class="word-text">${words[newIndex]}</div>
+                    <button class="delete-word-btn" onclick="removeCurrentWord('${student}')" title="Удалить слово">🗑️ Удалить</button>
                     <div class="word-counter">${newIndex + 1}</div>
-                    <button class="delete-word-btn" onclick="removeCurrentWord('${student}')" title="Удалить слово">×</button>
                 `;
                 
                 const prevButton = displayElement.parentElement.querySelector('.nav-arrow:first-child');
