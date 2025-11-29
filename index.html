@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Рейтинг учеников v2.3</title>
+    <title>Ваш Рейтинг</title>
     <style>
         * {
             margin: 0;
@@ -27,7 +27,7 @@
             margin: 0 auto;
             background: #111;
             border-radius: 10px;
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 0 20px rgba(0, 100, 255, 0.3);
             overflow: hidden;
             border: 1px solid #333;
         }
@@ -38,13 +38,19 @@
             padding: 20px 15px;
             text-align: center;
             border-bottom: 1px solid #333;
-            box-shadow: 0 0 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 0 15px rgba(0, 100, 255, 0.4);
         }
 
         h1 {
             font-size: 1.5em;
             margin-bottom: 8px;
-            text-shadow: 0 0 10px rgba(102, 126, 234, 0.7);
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.9);
+            color: #ffd700;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
         .page {
@@ -210,7 +216,7 @@
             line-height: 1.2;
         }
 
-        /* НОВЫЕ СТИЛИ ДЛЯ ГРИДА УЧЕНИКОВ */
+        /* НОВЫЕ СТИЛИ ДЛЯ ГРИДА УЧЕНИКОВ - ЖЕЛТАЯ ПОДСВЕТКА */
         .students-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -220,13 +226,13 @@
 
         .student-card {
             background: #1a1a1a;
-            border: 2px solid #667eea;
+            border: 2px solid #ffd700;
             border-radius: 10px;
             padding: 20px 15px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -236,14 +242,15 @@
 
         .student-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
-            border-color: #ffd700;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.7);
+            border-color: #ffed4a;
+            background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
         }
 
         .student-card.active {
-            border-color: #ffd700;
+            border-color: #ffed4a;
             background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.7);
+            box-shadow: 0 0 30px rgba(255, 237, 74, 0.8);
         }
 
         .student-card-name {
@@ -251,16 +258,17 @@
             color: #ffd700;
             font-size: 1.1em;
             margin-bottom: 8px;
-            text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
         }
 
         .student-card-words {
             font-size: 0.8em;
-            color: #aaa;
-            background: #333;
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
             padding: 3px 8px;
             border-radius: 12px;
             margin-top: 5px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
         }
 
         .student-works-section {
@@ -270,7 +278,7 @@
             border-radius: 10px;
             margin-top: 20px;
             border: 2px solid #333;
-            box-shadow: 0 0 15px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 0 15px rgba(0, 100, 255, 0.2);
         }
 
         .student-works-section.active {
@@ -294,9 +302,12 @@
 
         .selected-student-name {
             font-weight: bold;
-            color: #ffd700;
+            color: #0066ff;
             font-size: 1.3em;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            text-shadow: 0 0 10px rgba(0, 100, 255, 0.7);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .close-works {
@@ -328,23 +339,86 @@
             margin-top: 20px;
         }
 
-        .nav-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
+        /* СТИЛИ ДЛЯ СИНЕЙ КНОПКИ "ВАШИ РАБОТЫ" */
+        .nav-btn-blue {
+            background: #000;
+            color: #0066ff;
+            border: 2px solid #0066ff;
+            padding: 15px 25px;
+            border-radius: 25px;
             cursor: pointer;
-            font-size: 0.9em;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
             flex: 1;
-            max-width: 200px;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+            max-width: 250px;
+            box-shadow: 
+                0 0 20px rgba(0, 100, 255, 0.6),
+                0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
-        .nav-btn:hover {
+        .nav-btn-blue:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 0 30px rgba(0, 100, 255, 0.9),
+                0 8px 20px rgba(0, 0, 0, 0.4);
+            background: rgba(0, 100, 255, 0.1);
+        }
+
+        .nav-btn-blue:active {
             transform: translateY(-1px);
-            box-shadow: 0 0 15px rgba(102, 126, 234, 0.7);
+            box-shadow: 
+                0 0 25px rgba(0, 100, 255, 0.7),
+                0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* СТИЛИ ДЛЯ ЖЕЛТОЙ КНОПКИ "К РЕЙТИНГАМ" */
+        .nav-btn-yellow {
+            background: #000;
+            color: #ffd700;
+            border: 2px solid #ffd700;
+            padding: 15px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            flex: 1;
+            max-width: 250px;
+            box-shadow: 
+                0 0 20px rgba(255, 215, 0, 0.6),
+                0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .nav-btn-yellow:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 0 30px rgba(255, 215, 0, 0.9),
+                0 8px 20px rgba(0, 0, 0, 0.4);
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .nav-btn-yellow:active {
+            transform: translateY(-1px);
+            box-shadow: 
+                0 0 25px rgba(255, 215, 0, 0.7),
+                0 3px 10px rgba(0, 0, 0, 0.3);
         }
 
         .date-picker {
@@ -354,14 +428,14 @@
 
         .date-input {
             padding: 8px 12px;
-            border: 2px solid #667eea;
+            border: 2px solid #ffd700;
             border-radius: 6px;
             font-size: 0.9em;
             width: 100%;
             max-width: 200px;
             background: #1a1a1a;
             color: #fff;
-            box-shadow: 0 0 8px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
         }
 
         /* СТИЛИ ДЛЯ СИСТЕМЫ СЛОВ */
@@ -512,7 +586,7 @@
         .word-input-container {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             flex-shrink: 0;
         }
 
@@ -545,20 +619,6 @@
 
         .word-input::placeholder {
             color: #888;
-        }
-
-        /* Стили для кнопки добавления слова */
-        .word-input-container .nav-arrow {
-            background: #28a745;
-            box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
-            width: 36px;
-            height: 36px;
-            font-size: 1.1em;
-        }
-
-        .word-input-container .nav-arrow:hover {
-            background: #34ce57;
-            box-shadow: 0 0 12px rgba(52, 206, 87, 0.7);
         }
 
         .works-container {
@@ -868,7 +928,7 @@
             }
         }
 
-        .student-item, .nav-btn, .upload-area, .student-card {
+        .student-item, .nav-btn-blue, .nav-btn-yellow, .upload-area, .student-card {
             -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
@@ -899,8 +959,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>🏆 Рейтинг учеников v2.3</h1>
-            <p style="font-size: 0.9em; text-shadow: 0 0 5px rgba(255,255,255,0.3);">Система оценки и мониторинга успехов</p>
+            <h1>⭐My Stars⭐ </h1>
             <div class="sync-status" id="syncStatus">🔄 Синхронизация...</div>
         </header>
 
@@ -917,7 +976,7 @@
             </div>
 
             <div class="nav-buttons">
-                <button class="nav-btn" onclick="showPage('worksPage')">📚 Работы учеников</button>
+                <button class="nav-btn-blue" onclick="showPage('worksPage')">📄 Ваши работы</button>
             </div>
         </div>
 
@@ -927,20 +986,27 @@
                 <input type="date" class="date-input" id="workDate">
             </div>
 
+            <!-- Заголовок для страницы работ -->
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #0066ff; text-shadow: 0 0 15px rgba(0, 100, 255, 0.7); font-size: 1.4em;">
+                    📄 Ваши Работы
+                </h2>
+            </div>
+
             <!-- Сетка учеников -->
             <div class="students-grid" id="studentsGrid"></div>
 
             <!-- Секция работ выбранного ученика -->
             <div class="student-works-section" id="studentWorksSection">
                 <div class="selected-student-header">
-                    <div class="selected-student-name" id="selectedStudentName"></div>
+                    <div class="selected-student-name" id="selectedStudentName">📄 Ваши Работы</div>
                     <button class="close-works" onclick="closeStudentWorks()">✕ Закрыть</button>
                 </div>
                 <div id="worksList"></div>
             </div>
 
             <div class="nav-buttons">
-                <button class="nav-btn" onclick="showPage('mainPage')">⭐ К рейтингам</button>
+                <button class="nav-btn-yellow" onclick="showPage('mainPage')">⭐ К рейтингам</button>
             </div>
         </div>
     </div>
@@ -1407,6 +1473,8 @@
             const section = document.getElementById('studentWorksSection');
             section.classList.remove('active');
             initializeStudentsGrid();
+            // Возвращаем заголовок "Ваши Работы" когда закрываем секцию
+            document.getElementById('selectedStudentName').textContent = "📄 Ваши Работы";
         }
 
         // Инициализация работ выбранного ученика
@@ -1492,7 +1560,6 @@
                         placeholder="Add word"
                         onkeypress="handleWordInput(event, '${student}')"
                     >
-                    <button class="nav-arrow" onclick="addWordFromInput('${student}')" title="Добавить слово">+</button>
                 </div>
             `;
         }
@@ -1512,18 +1579,6 @@
                     });
                 }
                 event.preventDefault();
-            }
-        }
-
-        // Добавление слова по кнопке
-        function addWordFromInput(student) {
-            const input = document.getElementById(`wordInput_${student}`);
-            const word = input.value.trim();
-            if (word) {
-                addNewWord(student, word).then(() => {
-                    input.value = '';
-                    input.focus();
-                });
             }
         }
 
