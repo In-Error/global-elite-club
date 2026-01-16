@@ -151,14 +151,19 @@ function getTotalRatingPeriod() {
 }
 
 // === ФУНКЦИИ ДЛЯ РЕЙТИНГА ЗА НЕДЕЛЮ ===
+let currentSelectedWeek = getCurrentWeekId(); // Запоминаем выбранную неделю
+
 async function initializeWeekRating(weekId = null) {
     const weekRatingContainer = document.getElementById('weekRatingContainer');
     if (!weekRatingContainer) return;
     
-    // Если weekId не указан, используем текущую неделю
+    // Если weekId не указан, используем сохранённую неделю
     if (!weekId) {
-        weekId = getCurrentWeekId();
+        weekId = currentSelectedWeek || getCurrentWeekId();
     }
+    
+    // Сохраняем выбранную неделю
+    currentSelectedWeek = weekId;
     
     const weekDates = getWeekDates(weekId);
     const weekPeriod = `${weekDates.start} - ${weekDates.end}`;
@@ -169,7 +174,7 @@ async function initializeWeekRating(weekId = null) {
         let html = `
             <div class="rating-header">
                 <div class="rating-title week">🏆 Рейтинг за неделю</div>
-                <div class="rating-period">${weekPeriod}</div>
+                <div class="rating-period">Неделя: ${weekPeriod}</div>
             </div>
         `;
         
@@ -234,8 +239,6 @@ async function initializeTotalRating() {
     const totalRatingContainer = document.getElementById('totalRatingContainer');
     if (!totalRatingContainer) return;
     
-    const totalPeriod = getTotalRatingPeriod();
-    
     try {
         // Получаем все записи очков за все время
         const totalPointsSnapshot = await db.collection('totalPoints').get();
@@ -249,8 +252,7 @@ async function initializeTotalRating() {
         const studentsWithTotalPoints = students.map(student => ({
             name: student,
             points: pointsMap[student] || 0,
-            avatar: `avatars/${student}.png`,
-            lastUpdated: pointsMap[`${student}_lastUpdated`]
+            avatar: `avatars/${student}.png`
         }));
         
         // Сортируем по убыванию очков
@@ -259,7 +261,7 @@ async function initializeTotalRating() {
         let html = `
             <div class="rating-header">
                 <div class="rating-title total">⭐ Рейтинг за все время</div>
-                <div class="rating-period">${totalPeriod}</div>
+                <div class="rating-period">Сумма очков за все недели</div>
             </div>
         `;
         
@@ -267,7 +269,7 @@ async function initializeTotalRating() {
             html += '<div class="no-data">Нет данных за все время</div>';
         } else {
             studentsWithTotalPoints.forEach((studentData, index) => {
-                if (studentData.points === 0) return; // Пропускаем тех, у кого 0 очков
+                if (studentData.points === 0) return;
                 
                 const isTopThree = index < 3;
                 const itemClass = `rating-item total ${isTopThree ? 'top-three' : ''}`;
@@ -280,9 +282,6 @@ async function initializeTotalRating() {
                         <div class="rating-info">
                             <div class="rating-name">${studentData.name}</div>
                             <div class="rating-position">Место: ${index + 1}</div>
-                            <div class="rating-details">
-                                <div class="rating-date">Сумма всех недель</div>
-                            </div>
                         </div>
                         <div class="rating-score total">${studentData.points}</div>
                     </div>
@@ -297,50 +296,12 @@ async function initializeTotalRating() {
         totalRatingContainer.innerHTML = `
             <div class="rating-header">
                 <div class="rating-title total">⭐ Рейтинг за все время</div>
-                <div class="rating-period">Ошибка загрузки</div>
+                <div class="rating-period">Сумма очков за все недели</div>
             </div>
             <div class="no-data" style="color: #ff4444;">Ошибка загрузки данных</div>
         `;
     }
 }
-
-async function updateTotalPoints(pointsToAdd) {
-    // pointsToAdd = { student: points }
-    const batch = db.batch();
-    const now = new Date();
-    
-    for (const [student, points] of Object.entries(pointsToAdd)) {
-        if (points === 0) continue;
-        
-        const studentRef = db.collection('totalPoints').doc(student);
-        const currentPoints = totalPoints[student] || 0;
-        const newPoints = currentPoints + points;
-        
-        batch.set(studentRef, {
-            points: newPoints,
-            lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: now.toISOString()
-        });
-        
-        totalPoints[student] = newPoints;
-    }
-    
-    try {
-        await batch.commit();
-        updateSyncStatus('✅ Очки обновлены');
-        
-        // Обновляем отображение
-        initializeTotalRating();
-        
-    } catch (error) {
-        console.error('Ошибка обновления очков:', error);
-        updateSyncStatus('❌ Ошибка обновления очков', false);
-        
-        // Fallback на localStorage
-        localStorage.setItem('totalPoints', JSON.stringify(totalPoints));
-    }
-}
-
 // === ФУНКЦИИ ДЛЯ АДМИНКИ ===
 function initializeAdminPage() {
     // Устанавливаем текущую неделю по умолчанию
@@ -1087,12 +1048,32 @@ function closeStudentWorks() {
 document.addEventListener('DOMContentLoaded', async function() {
     await loadAllData();
     
+    // Загружаем последнюю выбранную неделю из localStorage
+    const savedWeek = localStorage.getItem('lastSelectedWeek');
+    if (savedWeek) {
+        currentSelectedWeek = savedWeek;
+    }
+    
+    // Инициализируем рейтинг с сохранённой неделей
+    initializeWeekRating(currentSelectedWeek);
+    
     // Инициализируем слушатель для выбора недели в админке
     const weekSelector = document.getElementById('weekSelector');
     if (weekSelector) {
+        // Устанавливаем сохранённую неделю в селектор
+        if (currentSelectedWeek) {
+            weekSelector.value = currentSelectedWeek;
+        }
+        
         weekSelector.addEventListener('change', function() {
             const weekId = this.value;
+            // Сохраняем выбор
+            currentSelectedWeek = weekId;
+            localStorage.setItem('lastSelectedWeek', weekId);
+            
+            // Загружаем данные для этой недели в админке
             loadWeekRankings(weekId);
+            // Обновляем рейтинг за неделю на главной
             initializeWeekRating(weekId);
         });
     }
