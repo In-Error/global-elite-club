@@ -181,6 +181,271 @@ function updateRatings() {
     });
 }
 
+// === ФУНКЦИЯ ПОИСКА ===
+
+function filterParticipants() {
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    const allCards = document.querySelectorAll('.participant-card');
+
+    allCards.forEach(card => {
+        const studentName = card.querySelector('.name').textContent.toLowerCase();
+        if (studentName.includes(query)) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// === ОСТАЛЬНАЯ ЛОГИКА ===
+
+function updateSyncStatus(message, isSuccess = true) {
+    const statusElement = document.getElementById('syncStatus');
+    statusElement.textContent = message;
+    statusElement.style.color = isSuccess ? '#00ff00' : '#ff4444';
+    statusElement.style.textShadow = isSuccess ? '0 0 5px rgba(0, 255, 0, 0.7)' : '0 0 5px rgba(255, 68, 68, 0.7)';
+}
+
+async function loadAllData() {
+    try {
+        updateSyncStatus('🔄 Загрузка данных...');
+        const wordsSnapshot = await db.collection('words').get();
+        studentWords = {};
+        wordsSnapshot.forEach(doc => {
+            studentWords[doc.id] = doc.data().words || [];
+        });
+        const worksSnapshot = await db.collection('works').get();
+        studentWorks = {};
+        worksSnapshot.forEach(doc => {
+            studentWorks[doc.id] = doc.data();
+        });
+        const namesSnapshot = await db.collection('ratingNames').get();
+        studentNames = {};
+        namesSnapshot.forEach(doc => {
+            studentNames[doc.id] = doc.data().name;
+        });
+        const additionalSnapshot = await db.collection('additionalWorks').get();
+       Спасибо за терпение! Теперь я вижу **всю картину целиком**.
+
+---
+
+### 🔥 Что происходит:
+
+На странице работ (когда вы нажимаете «📄 Ваши работы») отображается **не красивая сетка с карточками**, а **«кошмар» — сырые данные, текст, кнопки без стилей**.
+
+Причина:  
+Вы используете **старый `script.js`** (из файла `Pasted_Text_1768560721407.txt`), который не совместим с новым интерфейсом.
+
+---
+
+### ✅ Решение
+
+Вам нужно **полностью заменить `script.js`** на **новый код**, который я подготовил специально для вашего нового дизайна (ТОП-3 + звёзды + аватарки).
+
+---
+
+### 🚀 Готовый `script.js` — скопируйте и вставьте:
+
+```js
+// === КОНФИГУРАЦИЯ FIREBASE ===
+const firebaseConfig = {
+    apiKey: "AIzaSyA1gMGXixXqfgptc0-Nx5fRWCbS2lefXLY",
+    authDomain: "global-elite-club-dcd0d.firebaseapp.com",
+    projectId: "global-elite-club-dcd0d",
+    storageBucket: "global-elite-club-dcd0d.firebasestorage.app",
+    messagingSenderId: "372974979606",
+    appId: "1:372974979606:web:c29e3a0e724ca07abc4337",
+    measurementId: "G-EBEWY8W5Y7"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Данные студентов
+const students = [
+    "Alina", "Artem", "Dania", "Denis", "Lera", "Nastia Che",
+    "Nastia S", "Natasha", "Rita", "Selin", "Vika"
+];
+
+// Хранилища
+let studentWords = {};
+let studentWorks = {};
+let studentNames = {};
+let additionalWorks = {};
+let explanationsWorks = {};
+let currentSelectedStudent = null;
+let additionalExplanations = {};
+
+// === НОВАЯ ЛОГИКА ПОДСЧЁТА ОЧКОВ ===
+
+function getPointsByPlace(place) {
+    if (place >= 1 && place <= 11) return 12 - place;
+    return 0;
+}
+
+function calculateStudentStats() {
+    const stats = {};
+
+    students.forEach(name => {
+        stats[name] = {
+            name: name,
+            totalPoints: 0,
+            places: [],
+            participations: 0,
+            weeksParticipated: new Set()
+        };
+    });
+
+    // Обработка rating1
+    for (let i = 1; i <= 11; i++) {
+        const key = `rating1_${i}`;
+        const name = (studentNames[key] || '').trim();
+        if (name && stats[name]) {
+            stats[name].totalPoints += getPointsByPlace(i);
+            stats[name].places.push(i);
+            stats[name].participations++;
+            stats[name].weeksParticipated.add('rating1');
+        }
+    }
+
+    // Обработка rating2
+    for (let i = 1; i <= 11; i++) {
+        const key = `rating2_${i}`;
+        const name = (studentNames[key] || '').trim();
+        if (name && stats[name]) {
+            stats[name].totalPoints += getPointsByPlace(i);
+            stats[name].places.push(i);
+            stats[name].participations++;
+            stats[name].weeksParticipated.add('rating2');
+        }
+    }
+
+    Object.values(stats).forEach(s => {
+        if (s.places.length > 0) {
+            s.avgPlace = (s.places.reduce((a,b)=>a+b,0) / s.places.length).toFixed(2);
+        } else {
+            s.avgPlace = '—';
+        }
+        s.weeksCount = s.weeksParticipated.size;
+    });
+
+    return Object.values(stats);
+}
+
+function sortStudents(studentsData) {
+    return studentsData.sort((a, b) => {
+        if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+        if (a.avgPlace === '—') return 1;
+        if (b.avgPlace === '—') return -1;
+        return parseFloat(a.avgPlace) - parseFloat(b.avgPlace);
+    });
+}
+
+// === ФУНКЦИЯ ПОЛУЧЕНИЯ КОЛИЧЕСТВА ВЫПОЛНЕННЫХ ЗАДАНИЙ ===
+
+function getCompletedTasks(studentName) {
+    let count = 0;
+    // Основные работы
+    for (let i = 1; i <= 3; i++) {
+        const workKey = `${studentName}_work${i}`;
+        if (studentWorks[workKey] && studentWorks[workKey].image) {
+            count++;
+        }
+    }
+    // Проверки
+    for (let i = 1; i <= 3; i++) {
+        const checkKey = `${studentName}_check${i}`;
+        if (studentWorks[checkKey] && studentWorks[checkKey].image) {
+            count++;
+        }
+    }
+    // Дополнительные работы
+    const additionalWorkList = additionalWorks[studentName] || [];
+    count += additionalWorkList.filter(w => w.type === 'work').length;
+    count += additionalWorkList.filter(w => w.type === 'check').length;
+
+    return count;
+}
+
+// === ФУНКЦИЯ СОЗДАНИЯ КАРТОЧКИ УЧАСТНИКА ===
+
+function createParticipantCard(studentName, isTop3 = false, place = null) {
+    const completedTasks = getCompletedTasks(studentName);
+    const card = document.createElement('div');
+    card.className = `participant-card ${isTop3 ? 'top-three' : ''}`;
+    
+    // Определяем количество звёзд
+    let starsCount = 1;
+    if (place === 1) starsCount = 5;
+    else if (place === 2) starsCount = 4;
+    else if (place === 3) starsCount = 3;
+    
+    let starsHtml = '';
+    for (let i = 0; i < starsCount; i++) {
+        starsHtml += '<div class="star">⭐</div>';
+    }
+    
+    card.innerHTML = `
+        <div class="stars-container">
+            ${starsHtml}
+        </div>
+        <div class="avatar-container">
+            <img class="avatar" 
+                 src="https://raw.githubusercontent.com/In-Error/global-elite-club/main/avatars${studentName}.png" 
+                 alt="${studentName}"
+                 onerror="this.src='https://via.placeholder.com/100?text=${studentName.charAt(0)}'">
+        </div>
+        <div class="name">${studentName}</div>
+        <div class="tasks">Выполнено заданий: <span>${completedTasks}</span></div>
+    `;
+    card.onclick = () => {
+        alert(`Вы выбрали участника: ${studentName}\nВыполнено заданий: ${completedTasks}`);
+    };
+    return card;
+}
+
+// === ФУНКЦИЯ ОБНОВЛЕНИЯ РЕЙТИНГА ===
+
+function updateRatings() {
+    const stats = calculateStudentStats();
+    const sorted = sortStudents(stats);
+
+    const top3Container = document.getElementById('top3Container');
+    const allParticipantsGrid = document.getElementById('allParticipantsGrid');
+
+    top3Container.innerHTML = '';
+    allParticipantsGrid.innerHTML = '';
+
+    // Заполняем ТОП-3
+    for (let i = 0; i < Math.min(3, sorted.length); i++) {
+        const student = sorted[i];
+        const place = i + 1;
+        const card = createParticipantCard(student.name, true, place);
+        top3Container.appendChild(card);
+    }
+
+    // Заполняем сетку всех участников
+    sorted.forEach(student => {
+        const card = createParticipantCard(student.name);
+        allParticipantsGrid.appendChild(card);
+    });
+}
+
+// === ФУНКЦИЯ ПОИСКА ===
+
+function filterParticipants() {
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    const allCards = document.querySelectorAll('.participant-card');
+
+    allCards.forEach(card => {
+        const studentName = card.querySelector('.name').textContent.toLowerCase();
+        if (studentName.includes(query)) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
 // === ОСТАЛЬНАЯ ЛОГИКА ===
 
 function updateSyncStatus(message, isSuccess = true) {
