@@ -19,18 +19,6 @@ const students = [
     "Nastia S", "Natasha", "Rita", "Selin", "Vika"
 ];
 
-const rating1Titles = [
-    "Гепард Скорости", "Турбо-сокол", "Быстрая лиса", "Енот-шустрик", 
-    "Шустрый зайчик", "Шустрая белочка", "Неутомимый Муравей", 
-    "Ёжик-быстроножик", "Трудяга-бобр", "Проворная выдра", "Смелая черепашка"
-];
-
-const rating2Titles = [
-    "Орел точности", "Пантера-точность", "Мудрая сова", "Лиса-точность", 
-    "Дельфин смысла", "Умный котик", "Аккуратная косуля", 
-    "Внимательный медвежонок", "Пингвин ясности", "Аккуратный кролик", "Потенциальная звезда"
-];
-
 // Хранилища данных
 let studentWords = {};
 let studentWorks = {};
@@ -105,144 +93,258 @@ async function loadAllData() {
     }
     
     // Обновляем интерфейс
-    initializeRatings();
     initializeWeekRating();
     initializeTotalRating();
     initializeStudentsGrid();
 }
 
-// === ФУНКЦИИ ДЛЯ РЕЙТИНГА ЗА ВСЕ ВРЕМЯ ===
-function initializeTotalRating() {
-    const totalRatingList = document.getElementById('totalRatingList');
-    if (!totalRatingList) return;
-    
-    totalRatingList.innerHTML = '';
-    
-    // Создаем массив учеников с очками за все время
-    const studentsWithTotalPoints = students.map(student => ({
-        name: student,
-        points: totalPoints[student] || 0,
-        avatar: `avatars${student}.png`
-    }));
-    
-    // Сортируем по убыванию очков
-    studentsWithTotalPoints.sort((a, b) => b.points - a.points);
-    
-    // Отображаем
-    studentsWithTotalPoints.forEach((studentData, index) => {
-        const isTopThree = index < 3;
-        const item = document.createElement('div');
-        item.className = `total-rating-item ${isTopThree ? 'top-three' : ''}`;
-        
-        item.innerHTML = `
-            <img src="${studentData.avatar}" alt="${studentData.name}" class="total-rating-avatar ${isTopThree ? 'top-three' : ''}">
-            <div class="total-rating-info">
-                <div class="total-rating-name">${studentData.name}</div>
-                <div class="total-rating-points">Место: ${index + 1}</div>
-            </div>
-            <div class="total-rating-score">${studentData.points}</div>
-        `;
-        
-        totalRatingList.appendChild(item);
-    });
-}
-
-async function updateTotalPoints(pointsToAdd) {
-    // pointsToAdd = { student: points }
-    for (const [student, points] of Object.entries(pointsToAdd)) {
-        const currentPoints = totalPoints[student] || 0;
-        totalPoints[student] = currentPoints + points;
-        
-        // Сохраняем в Firebase
-        try {
-            await db.collection('totalPoints').doc(student).set({
-                points: totalPoints[student],
-                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        } catch (error) {
-            console.error('Ошибка обновления очков:', error);
-            localStorage.setItem('totalPoints', JSON.stringify(totalPoints));
-        }
-    }
-    
-    // Обновляем отображение
-    initializeTotalRating();
-}
-
-// === ФУНКЦИИ ДЛЯ РЕЙТИНГА ЗА НЕДЕЛЮ ===
+// === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ НЕДЕЛЬ ===
 function getWeekNumber(date) {
     const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
     const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
     return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
 }
 
-async function initializeWeekRating(weekId = null) {
-    const weekRatingList = document.getElementById('weekRatingList');
-    if (!weekRatingList) return;
+function getCurrentWeekId() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const week = getWeekNumber(today);
+    return `${year}-W${week.toString().padStart(2, '0')}`;
+}
+
+function getWeekDates(weekId) {
+    // Формат: YYYY-WWW
+    const [year, weekStr] = weekId.split('-W');
+    const week = parseInt(weekStr);
     
-    weekRatingList.innerHTML = '';
+    const firstDayOfYear = new Date(year, 0, 1);
+    const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
+    
+    const startDate = new Date(year, 0, daysOffset);
+    const endDate = new Date(year, 0, daysOffset + 6);
+    
+    const formatDate = (date) => {
+        return date.toLocaleDateString('ru-RU', { 
+            day: '2-digit', 
+            month: '2-digit' 
+        });
+    };
+    
+    return {
+        start: formatDate(startDate),
+        end: formatDate(endDate)
+    };
+}
+
+function getTotalRatingPeriod() {
+    // Здесь можно реализовать логику получения даты начала сбора очков
+    // Для примера будем показывать текущий год
+    const now = new Date();
+    const startYear = 2024; // Год, когда начали собирать очки
+    const currentYear = now.getFullYear();
+    
+    if (startYear === currentYear) {
+        return `с ${startYear} года`;
+    } else {
+        return `${startYear}-${currentYear}`;
+    }
+}
+
+// === ФУНКЦИИ ДЛЯ РЕЙТИНГА ЗА НЕДЕЛЮ ===
+async function initializeWeekRating(weekId = null) {
+    const weekRatingContainer = document.getElementById('weekRatingContainer');
+    if (!weekRatingContainer) return;
     
     // Если weekId не указан, используем текущую неделю
     if (!weekId) {
-        const today = new Date();
-        const year = today.getFullYear();
-        const week = getWeekNumber(today);
-        weekId = `${year}-W${week.toString().padStart(2, '0')}`;
+        weekId = getCurrentWeekId();
     }
+    
+    const weekDates = getWeekDates(weekId);
+    const weekPeriod = `${weekDates.start} - ${weekDates.end}`;
     
     try {
         const doc = await db.collection('weekRankings').doc(weekId).get();
+        
+        let html = `
+            <div class="rating-header">
+                <div class="rating-title week">🏆 Рейтинг за неделю</div>
+                <div class="rating-period">${weekPeriod}</div>
+            </div>
+        `;
+        
         if (!doc.exists) {
-            weekRatingList.innerHTML = '<div style="text-align: center; color: #aaa; padding: 20px;">Нет данных за эту неделю</div>';
-            return;
+            html += '<div class="no-data">Нет данных за эту неделю</div>';
+        } else {
+            const data = doc.data();
+            const weekPoints = data.weekPoints || {};
+            
+            // Создаем массив учеников с очками за неделю
+            const studentsWithWeekPoints = students.map(student => ({
+                name: student,
+                points: weekPoints[student] || 0,
+                avatar: `avatars/${student}.png`
+            }));
+            
+            // Сортируем по убыванию очков
+            studentsWithWeekPoints.sort((a, b) => b.points - a.points);
+            
+            // Отображаем только тех, у кого есть очки
+            const studentsWithPoints = studentsWithWeekPoints.filter(s => s.points > 0);
+            
+            if (studentsWithPoints.length === 0) {
+                html += '<div class="no-data">Нет данных за эту неделю</div>';
+            } else {
+                studentsWithPoints.forEach((studentData, index) => {
+                    const isTopThree = index < 3;
+                    const itemClass = `rating-item week ${isTopThree ? 'top-three' : ''}`;
+                    const avatarClass = `rating-avatar week ${isTopThree ? 'top-three' : ''}`;
+                    
+                    html += `
+                        <div class="${itemClass}">
+                            <img src="${studentData.avatar}" alt="${studentData.name}" class="${avatarClass}" 
+                                 onerror="this.src='avatars/default.png'">
+                            <div class="rating-info">
+                                <div class="rating-name">${studentData.name}</div>
+                                <div class="rating-position">Место: ${index + 1}</div>
+                            </div>
+                            <div class="rating-score week">${studentData.points}</div>
+                        </div>
+                    `;
+                });
+            }
         }
-    
-        const data = doc.data();
-        const weekPoints = data.weekPoints || {};
         
-        // Создаем массив учеников с очками за неделю
-        const studentsWithWeekPoints = students.map(student => ({
-            name: student,
-            points: weekPoints[student] || 0,
-            avatar: `avatars${student}.png`
-        }));
-        
-        // Сортируем по убыванию очков
-        studentsWithWeekPoints.sort((a, b) => b.points - a.points);
-        
-        // Отображаем
-        studentsWithWeekPoints.forEach((studentData, index) => {
-            if (studentData.points === 0) return; // Пропускаем тех, у кого 0 очков
-            
-            const isTopThree = index < 3;
-            const item = document.createElement('div');
-            item.className = `week-rating-item ${isTopThree ? 'top-three' : ''}`;
-            
-            item.innerHTML = `
-                <img src="${studentData.avatar}" alt="${studentData.name}" class="week-rating-avatar ${isTopThree ? 'top-three' : ''}">
-                <div class="week-rating-info">
-                    <div class="week-rating-name">${studentData.name}</div>
-                    <div class="week-rating-points">Место: ${index + 1}</div>
-                </div>
-                <div class="week-rating-score">${studentData.points}</div>
-            `;
-            
-            weekRatingList.appendChild(item);
-        });
+        weekRatingContainer.innerHTML = html;
         
     } catch (error) {
         console.error('Ошибка загрузки рейтинга недели:', error);
-        weekRatingList.innerHTML = '<div style="text-align: center; color: #ff4444; padding: 20px;">Ошибка загрузки данных</div>';
+        weekRatingContainer.innerHTML = `
+            <div class="rating-header">
+                <div class="rating-title week">🏆 Рейтинг за неделю</div>
+                <div class="rating-period">Ошибка загрузки</div>
+            </div>
+            <div class="no-data" style="color: #ff4444;">Ошибка загрузки данных</div>
+        `;
+    }
+}
+
+// === ФУНКЦИИ ДЛЯ РЕЙТИНГА ЗА ВСЕ ВРЕМЯ ===
+async function initializeTotalRating() {
+    const totalRatingContainer = document.getElementById('totalRatingContainer');
+    if (!totalRatingContainer) return;
+    
+    const totalPeriod = getTotalRatingPeriod();
+    
+    try {
+        // Получаем все записи очков за все время
+        const totalPointsSnapshot = await db.collection('totalPoints').get();
+        const pointsMap = {};
+        
+        totalPointsSnapshot.forEach(doc => {
+            pointsMap[doc.id] = doc.data().points || 0;
+        });
+        
+        // Создаем массив учеников с очками
+        const studentsWithTotalPoints = students.map(student => ({
+            name: student,
+            points: pointsMap[student] || 0,
+            avatar: `avatars/${student}.png`,
+            lastUpdated: pointsMap[`${student}_lastUpdated`]
+        }));
+        
+        // Сортируем по убыванию очков
+        studentsWithTotalPoints.sort((a, b) => b.points - a.points);
+        
+        let html = `
+            <div class="rating-header">
+                <div class="rating-title total">⭐ Рейтинг за все время</div>
+                <div class="rating-period">${totalPeriod}</div>
+            </div>
+        `;
+        
+        if (studentsWithTotalPoints.every(s => s.points === 0)) {
+            html += '<div class="no-data">Нет данных за все время</div>';
+        } else {
+            studentsWithTotalPoints.forEach((studentData, index) => {
+                if (studentData.points === 0) return; // Пропускаем тех, у кого 0 очков
+                
+                const isTopThree = index < 3;
+                const itemClass = `rating-item total ${isTopThree ? 'top-three' : ''}`;
+                const avatarClass = `rating-avatar total ${isTopThree ? 'top-three' : ''}`;
+                
+                html += `
+                    <div class="${itemClass}">
+                        <img src="${studentData.avatar}" alt="${studentData.name}" class="${avatarClass}"
+                             onerror="this.src='avatars/default.png'">
+                        <div class="rating-info">
+                            <div class="rating-name">${studentData.name}</div>
+                            <div class="rating-position">Место: ${index + 1}</div>
+                            <div class="rating-details">
+                                <div class="rating-date">Сумма всех недель</div>
+                            </div>
+                        </div>
+                        <div class="rating-score total">${studentData.points}</div>
+                    </div>
+                `;
+            });
+        }
+        
+        totalRatingContainer.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Ошибка загрузки общего рейтинга:', error);
+        totalRatingContainer.innerHTML = `
+            <div class="rating-header">
+                <div class="rating-title total">⭐ Рейтинг за все время</div>
+                <div class="rating-period">Ошибка загрузки</div>
+            </div>
+            <div class="no-data" style="color: #ff4444;">Ошибка загрузки данных</div>
+        `;
+    }
+}
+
+async function updateTotalPoints(pointsToAdd) {
+    // pointsToAdd = { student: points }
+    const batch = db.batch();
+    const now = new Date();
+    
+    for (const [student, points] of Object.entries(pointsToAdd)) {
+        if (points === 0) continue;
+        
+        const studentRef = db.collection('totalPoints').doc(student);
+        const currentPoints = totalPoints[student] || 0;
+        const newPoints = currentPoints + points;
+        
+        batch.set(studentRef, {
+            points: newPoints,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: now.toISOString()
+        });
+        
+        totalPoints[student] = newPoints;
+    }
+    
+    try {
+        await batch.commit();
+        updateSyncStatus('✅ Очки обновлены');
+        
+        // Обновляем отображение
+        initializeTotalRating();
+        
+    } catch (error) {
+        console.error('Ошибка обновления очков:', error);
+        updateSyncStatus('❌ Ошибка обновления очков', false);
+        
+        // Fallback на localStorage
+        localStorage.setItem('totalPoints', JSON.stringify(totalPoints));
     }
 }
 
 // === ФУНКЦИИ ДЛЯ АДМИНКИ ===
 function initializeAdminPage() {
     // Устанавливаем текущую неделю по умолчанию
-    const today = new Date();
-    const year = today.getFullYear();
-    const week = getWeekNumber(today);
-    const weekInput = `${year}-W${week.toString().padStart(2, '0')}`;
+    const weekInput = getCurrentWeekId();
     const weekSelector = document.getElementById('weekSelector');
     weekSelector.value = weekInput;
     
@@ -420,7 +522,7 @@ function clearWeekRankings() {
     }
 }
 
-// === ОРИГИНАЛЬНЫЕ ФУНКЦИИ ===
+// === ОРИГИНАЛЬНЫЕ ФУНКЦИИ ДЛЯ РАБОТ ===
 
 // Функция сжатия изображений
 function compressImage(file, maxWidth = 1200, quality = 0.8) {
@@ -512,74 +614,6 @@ async function removeCurrentWord(studentName) {
             }
         }
     }
-}
-
-// Сохранение имени в рейтинге
-async function saveRatingName(ratingType, position, name) {
-    const key = `${ratingType}_${position}`;
-    try {
-        await db.collection('ratingNames').doc(key).set({
-            name: name,
-            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        studentNames[key] = name;
-        updateSyncStatus('✅ Имя сохранено');
-    } catch (error) {
-        console.error('Ошибка сохранения имени:', error);
-        studentNames[key] = name;
-        localStorage.setItem('studentNames', JSON.stringify(studentNames));
-    }
-}
-
-// Инициализация рейтингов
-function initializeRatings() {
-    const rating1List = document.getElementById('rating1List');
-    const rating2List = document.getElementById('rating2List');
-
-    if (!rating1List || !rating2List) return;
-
-    rating1List.innerHTML = '';
-    rating2List.innerHTML = '';
-
-    rating1Titles.forEach((title, index) => {
-        const isTopThree = index < 3;
-        const studentItem = createRatingItem(index + 1, title, 'rating1', isTopThree);
-        rating1List.appendChild(studentItem);
-    });
-
-    rating2Titles.forEach((title, index) => {
-        const isTopThree = index < 3;
-        const studentItem = createRatingItem(index + 1, title, 'rating2', isTopThree);
-        rating2List.appendChild(studentItem);
-    });
-}
-
-// Создание элемента рейтинга
-function createRatingItem(place, title, ratingType, isTopThree = false) {
-    const item = document.createElement('div');
-    item.className = `student-item ${isTopThree ? 'top-three' : ''}`;
-    
-    const nameKey = `${ratingType}_${place}`;
-    const savedName = studentNames[nameKey] || '';
-    
-    item.innerHTML = `
-        <div class="name-input-container">
-            <input 
-                type="text" 
-                class="name-input" 
-                placeholder="Введите имя" 
-                value="${savedName}"
-                maxlength="15"
-                oninput="saveRatingName('${ratingType}', ${place}, this.value)"
-            >
-        </div>
-        <div class="student-info">
-            <div class="student-name">${place} место</div>
-            <div class="student-title">${title}</div>
-        </div>
-    `;
-    
-    return item;
 }
 
 // Инициализация сетки учеников
@@ -1052,12 +1086,14 @@ function closeStudentWorks() {
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', async function() {
     await loadAllData();
-    document.getElementById('workDate').valueAsDate = new Date();
     
-    // Инициализируем слушатель для выбора недели
-    document.getElementById('weekSelector').addEventListener('change', function() {
-        const weekId = this.value;
-        loadWeekRankings(weekId);
-        initializeWeekRating(weekId);
-    });
+    // Инициализируем слушатель для выбора недели в админке
+    const weekSelector = document.getElementById('weekSelector');
+    if (weekSelector) {
+        weekSelector.addEventListener('change', function() {
+            const weekId = this.value;
+            loadWeekRankings(weekId);
+            initializeWeekRating(weekId);
+        });
+    }
 });
