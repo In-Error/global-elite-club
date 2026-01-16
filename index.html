@@ -33,10 +33,11 @@
             </div>
 
             <div class="nav-buttons">
-    <button class="nav-btn-blue" onclick="showPage('worksPage')">📄 Ваши работы</button>
-    <button class="nav-btn-green" onclick="showPage('helpPage')">❓ Как объяснить ошибки?</button>
-    <button class="nav-btn-admin" onclick="showPage('adminPage')">⚙️ Админка</button>
-</div>
+                <button class="nav-btn-blue" onclick="showPage('worksPage')">📄 Ваши работы</button>
+                <button class="nav-btn-green" onclick="showPage('helpPage')">❓ Как объяснить ошибки?</button>
+                <button class="nav-btn-admin" onclick="showPage('adminPage')">⚙️ Админка</button>
+            </div>
+        </div>
 
         <!-- Страница просмотра работ -->
         <div id="worksPage" class="page">
@@ -65,45 +66,45 @@
             </div>
         </div>
 
-            <!-- Страница "Как объяснить ошибки?" -->
-<div id="helpPage" class="page">
-    <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="color: #00ff00; text-shadow: 0 0 15px rgba(0, 255, 0, 0.7); font-size: 1.4em;">
-            ❓ Как объяснить ошибки?
-        </h2>
-        <p style="color: #aaa; margin-top: 10px;">Справочник для учеников</p>
-    </div>
+        <!-- Страница "Как объяснить ошибки?" -->
+        <div id="helpPage" class="page">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #00ff00; text-shadow: 0 0 15px rgba(0, 255, 0, 0.7); font-size: 1.4em;">
+                    ❓ Как объяснить ошибки?
+                </h2>
+                <p style="color: #aaa; margin-top: 10px;">Справочник для учеников</p>
+            </div>
 
-    <!-- Режим админа (добавление разделов) -->
-    <div class="admin-mode" id="adminMode" style="display: none;">
-        <button class="add-section-btn" onclick="addNewSection()">
-            <span style="font-size: 1.5em;">+</span> Добавить раздел
-        </button>
-        
-        <div id="sectionsList" class="sections-list">
-            <!-- Список разделов будет здесь -->
-        </div>
-        
-        <div id="editorContainer" class="editor-container" style="display: none;">
-            <!-- Редактор будет здесь -->
-        </div>
-    </div>
+            <!-- Режим админа (добавление разделов) -->
+            <div class="admin-mode" id="adminMode" style="display: none;">
+                <button class="add-section-btn" onclick="addNewSection()">
+                    <span style="font-size: 1.5em;">+</span> Добавить раздел
+                </button>
+                
+                <div id="sectionsList" class="sections-list">
+                    <!-- Список разделов будет здесь -->
+                </div>
+                
+                <div id="editorContainer" class="editor-container" style="display: none;">
+                    <!-- Редактор будет здесь -->
+                </div>
+            </div>
 
-    <!-- Режим ученика (только просмотр) -->
-    <div class="student-mode" id="studentMode">
-        <div class="help-sections" id="helpSectionsView">
-            <!-- Разделы для просмотра будут здесь -->
-        </div>
-    </div>
+            <!-- Режим ученика (только просмотр) -->
+            <div class="student-mode" id="studentMode">
+                <div class="help-sections" id="helpSectionsView">
+                    <!-- Разделы для просмотра будут здесь -->
+                </div>
+            </div>
 
-    <div class="nav-buttons" style="margin-top: 30px;">
-        <button class="nav-btn-yellow" onclick="showPage('mainPage')">← На главную</button>
-        <button class="nav-btn-admin" onclick="toggleHelpMode()" id="toggleModeBtn">
-            🔧 Режим редактирования
-        </button>
-    </div>
-</div>
-            
+            <div class="nav-buttons" style="margin-top: 30px;">
+                <button class="nav-btn-yellow" onclick="showPage('mainPage')">← На главную</button>
+                <button class="nav-btn-admin" onclick="toggleHelpMode()" id="toggleModeBtn">
+                    🔧 Режим редактирования
+                </button>
+            </div>
+        </div>
+
         <!-- Страница админки -->
         <div id="adminPage" class="page">
             <div style="text-align: center; margin-bottom: 20px;">
@@ -156,66 +157,21 @@
         <img class="modal-content" id="fullscreenImage">
     </div>
 
+    <!-- Модальное окно для названия раздела -->
+    <div id="sectionModal" class="modal">
+        <div class="modal-content-small">
+            <h3 style="color: #00ff00; margin-bottom: 20px;">Новый раздел</h3>
+            <input type="text" id="sectionNameInput" class="modal-input" placeholder="Введите название (например: Артикли)" autofocus>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeSectionModal()">Отмена</button>
+                <button class="modal-btn save" onclick="saveNewSection()">Создать</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Подключаем Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
-<!-- Добавь кнопку в nav-buttons на главной -->
-<div class="nav-buttons">
-    <button class="nav-btn-blue" onclick="showPage('worksPage')">📄 Ваши работы</button>
-    <button class="nav-btn-green" onclick="showPage('helpPage')">❓ Как объяснить ошибки?</button>
-    <button class="nav-btn-admin" onclick="showPage('adminPage')">⚙️ Админка</button>
-</div>
-
-<!-- Новая страница (добавь рядом с другими страницами) -->
-<div id="helpPage" class="page">
-    <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="color: #00ff00; text-shadow: 0 0 15px rgba(0, 255, 0, 0.7); font-size: 1.4em;">
-            ❓ Как объяснить ошибки?
-        </h2>
-        <p style="color: #aaa; margin-top: 10px;">Справочник для учеников</p>
-    </div>
-
-    <!-- Режим админа (добавление разделов) -->
-    <div class="admin-mode" id="adminMode" style="display: none;">
-        <button class="add-section-btn" onclick="addNewSection()">
-            <span style="font-size: 1.5em;">+</span> Добавить раздел
-        </button>
-        
-        <div id="sectionsList" class="sections-list">
-            <!-- Список разделов будет здесь -->
-        </div>
-        
-        <div id="editorContainer" class="editor-container" style="display: none;">
-            <!-- Редактор будет здесь -->
-        </div>
-    </div>
-
-    <!-- Режим ученика (только просмотр) -->
-    <div class="student-mode" id="studentMode">
-        <div class="help-sections" id="helpSectionsView">
-            <!-- Разделы для просмотра будут здесь -->
-        </div>
-    </div>
-
-    <div class="nav-buttons" style="margin-top: 30px;">
-        <button class="nav-btn-yellow" onclick="showPage('mainPage')">← На главную</button>
-        <button class="nav-btn-admin" onclick="toggleHelpMode()" id="toggleModeBtn">
-            🔧 Режим редактирования
-        </button>
-    </div>
-</div>
-
-<!-- Модальное окно для названия раздела -->
-<div id="sectionModal" class="modal">
-    <div class="modal-content-small">
-        <h3 style="color: #00ff00; margin-bottom: 20px;">Новый раздел</h3>
-        <input type="text" id="sectionNameInput" class="modal-input" placeholder="Введите название (например: Артикли)" autofocus>
-        <div class="modal-buttons">
-            <button class="modal-btn cancel" onclick="closeSectionModal()">Отмена</button>
-            <button class="modal-btn save" onclick="saveNewSection()">Создать</button>
-        </div>
-    </div>
-</div>
