@@ -28,6 +28,11 @@ let totalPoints = {};
 let currentSelectedStudent = null;
 let currentWordIndexes = {};
 
+// === ДЛЯ РАЗДЕЛА "КАК ОБЪЯСНИТЬ ОШИБКИ" ===
+let helpSections = {};
+let currentSectionId = null;
+let isHelpAdminMode = false;
+
 // Функция обновления статуса синхронизации
 function updateSyncStatus(message, isSuccess = true) {
     const statusElement = document.getElementById('syncStatus');
