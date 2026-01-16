@@ -3,146 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Elite Club</title>
-    
-    <!-- Подключаем стили -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Р’Р°С€ Р РµР№С‚РёРЅРі</title>
     <link rel="stylesheet" href="style.css">
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
 <body>
-    <!-- Форма входа -->
-    <div id="loginForm" style="display: none; max-width: 500px; margin: 50px auto; padding: 30px; background: rgba(0, 0, 0, 0.9); border-radius: 15px; border: 2px solid #00ff00; box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);">
-        <h2 style="color: #00ff00; text-align: center; margin-bottom: 30px; font-size: 28px;">Global Elite Club</h2>
-        
-        <div style="margin-bottom: 20px; text-align: center;">
-            <button id="showStudentLogin" style="padding: 12px 25px; margin: 0 10px; background: #0066cc; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
-                👤 Войти как ученик
-            </button>
-            <button id="showAdminLogin" style="padding: 12px 25px; margin: 0 10px; background: #ff6600; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
-                👑 Войти как администратор
-            </button>
-        </div>
-        
-        <input type="hidden" id="loginType" value="student">
-        
-        <!-- Форма для учеников -->
-        <div id="studentLogin" style="display: block;">
-            <h3 style="color: #00ff00; text-align: center; margin-bottom: 20px;">Вход для учеников</h3>
-            
-            <div style="margin-bottom: 20px;">
-                <label style="color: #00ff00; display: block; margin-bottom: 8px; font-size: 16px;">Ваше имя:</label>
-                <select id="studentName" style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.1); border: 1px solid #00ff00; color: white; border-radius: 5px; font-size: 16px;">
-                    <option value="">Выберите ваше имя</option>
-                    <option value="Alina">Alina</option>
-                    <option value="Artem">Artem</option>
-                    <option value="Dania">Dania</option>
-                    <option value="Denis">Denis</option>
-                    <option value="Lera">Lera</option>
-                    <option value="Nastia Che">Nastia Che</option>
-                    <option value="Nastia S">Nastia S</option>
-                    <option value="Natasha">Natasha</option>
-                    <option value="Rita">Rita</option>
-                    <option value="Selin">Selin</option>
-                    <option value="Vika">Vika</option>
-                </select>
-            </div>
-            
-            <button id="loginStudentBtn" style="width: 100%; padding: 15px; background: #00ff00; color: black; border: none; border-radius: 5px; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px;">
-                Войти
-            </button>
-            
-            <p style="color: #aaa; text-align: center; margin-top: 15px; font-size: 14px;">
-                Просто выберите ваше имя из списка и нажмите "Войти"
-            </p>
-        </div>
-        
-        <!-- Форма для администратора -->
-        <div id="adminLogin" style="display: none;">
-            <h3 style="color: #ff6600; text-align: center; margin-bottom: 20px;">Вход для администратора</h3>
-            
-            <div style="margin-bottom: 20px;">
-                <label style="color: #ff6600; display: block; margin-bottom: 8px; font-size: 16px;">Логин:</label>
-                <input type="text" id="adminUsername" value="SV" readonly
-                       style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.1); border: 1px solid #ff6600; color: #ff6600; border-radius: 5px; font-size: 16px; font-weight: bold;">
-            </div>
-            
-            <div style="margin-bottom: 20px;">
-                <label style="color: #ff6600; display: block; margin-bottom: 8px; font-size: 16px;">Пароль:</label>
-                <input type="password" id="adminPassword" placeholder="Введите пароль"
-                       style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.1); border: 1px solid #ff6600; color: white; border-radius: 5px; font-size: 16px;">
-            </div>
-            
-            <button id="loginAdminBtn" style="width: 100%; padding: 15px; background: #ff6600; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px;">
-                Войти как администратор
-            </button>
-            
-            <p style="color: #aaa; text-align: center; margin-top: 15px; font-size: 14px;">
-                Используйте пароль администратора
-            </p>
-        </div>
-    </div>
+    <div class="container">
+        <header>
+            <h1>в­ђMy Starsв­ђ</h1>
+            <div class="sync-status" id="syncStatus">рџ”„ РЎРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ...</div>
+        </header>
 
-    <!-- Основной контент -->
-    <div id="mainContent" style="display: none;">
-        <!-- Навигация -->
-        <nav class="main-nav" style="background: rgba(0, 0, 0, 0.8); padding: 15px; border-bottom: 2px solid #00ff00; display: flex; align-items: center;">
-            <button onclick="showPage('mainPage')" style="margin-right: 15px;">🏠 Главная</button>
-            
-            <!-- Для учеников - кнопка "Мои работы" -->
-            <button id="worksPageBtn" style="margin-right: 15px; display: none;" onclick="showPage('worksPage')">
-                📄 Мои работы
-            </button>
-            
-            <!-- Для админа - кнопка "Все работы" -->
-            <button id="allWorksBtn" style="margin-right: 15px; display: none;" onclick="showPage('worksPage')">
-                📚 Все работы
-            </button>
-            
-            <button onclick="showPage('helpPage')" style="margin-right: 15px;">❓ Как объяснить ошибки</button>
-            
-            <button id="adminNav" style="margin-right: 15px; display: none;" onclick="showPage('adminPage')">
-                ⚙️ Админка
-            </button>
-            
-            <div style="flex-grow: 1;"></div>
-            
-            <span id="userInfo" style="color: #00ff00; margin-right: 15px; display: none; font-weight: bold;"></span>
-            
-            <button id="logoutBtn" style="display: none; background: #ff4444; color: white;" onclick="logout()">
-                🚪 Выйти
-            </button>
-        </nav>
-        
-        <!-- Заголовок для ученика -->
-        <h2 id="studentTitle" style="color: #00ff00; text-align: center; margin: 20px 0; display: none;"></h2>
-        
-        <!-- Страницы -->
+        <!-- Р“Р»Р°РІРЅР°СЏ СЃС‚СЂР°РЅРёС†Р° СЃ СЂРµР№С‚РёРЅРіР°РјРё -->
         <div id="mainPage" class="page active">
-            <h1>Главная страница</h1>
-            <p>Добро пожаловать!</p>
+            <!-- Р РµР№С‚РёРЅРі Р·Р° РЅРµРґРµР»СЋ -->
+            <div class="rating-section">
+                <div class="rating-container week" id="weekRatingContainer">
+                    <!-- Р РµР№С‚РёРЅРі Р·Р° РЅРµРґРµР»СЋ Р±СѓРґРµС‚ Р·Р°РіСЂСѓР¶РµРЅ Р·РґРµСЃСЊ -->
+                </div>
+            </div>
+
+            <!-- Р РµР№С‚РёРЅРі Р·Р° РІСЃРµ РІСЂРµРјСЏ -->
+            <div class="rating-section">
+                <div class="rating-container total" id="totalRatingContainer">
+                    <!-- Р РµР№С‚РёРЅРі Р·Р° РІСЃРµ РІСЂРµРјСЏ Р±СѓРґРµС‚ Р·Р°РіСЂСѓР¶РµРЅ Р·РґРµСЃСЊ -->
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn-blue" onclick="showPage('worksPage')">рџ“„ Р’Р°С€Рё СЂР°Р±РѕС‚С‹</button>
+                <button class="nav-btn-admin" onclick="showPage('adminPage')">вљ™пёЏ РђРґРјРёРЅРєР°</button>
+            </div>
         </div>
 
+        <!-- РЎС‚СЂР°РЅРёС†Р° РїСЂРѕСЃРјРѕС‚СЂР° СЂР°Р±РѕС‚ -->
         <div id="worksPage" class="page">
-            <h1>Мои работы</h1>
-            <p>Здесь будут работы</p>
+            <div class="date-picker">
+                <input type="date" class="date-input" id="workDate">
+            </div>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #0066ff; text-shadow: 0 0 15px rgba(0, 100, 255, 0.7); font-size: 1.4em;">
+                    рџ“„ Р’Р°С€Рё Р Р°Р±РѕС‚С‹
+                </h2>
+            </div>
+
+            <div class="students-grid" id="studentsGrid"></div>
+
+            <div class="student-works-section" id="studentWorksSection">
+                <div class="selected-student-header">
+                    <div class="selected-student-name" id="selectedStudentName">рџ“„ Р’Р°С€Рё Р Р°Р±РѕС‚С‹</div>
+                    <button class="close-works" onclick="closeStudentWorks()">вњ• Р—Р°РєСЂС‹С‚СЊ</button>
+                </div>
+                <div id="worksList"></div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn-yellow" onclick="showPage('mainPage')">в­ђ Рљ СЂРµР№С‚РёРЅРіР°Рј</button>
+            </div>
         </div>
 
-        <div id="helpPage" class="page">
-            <h1>Помощь</h1>
-            <p>Здесь будет помощь</p>
-        </div>
-
+        <!-- РЎС‚СЂР°РЅРёС†Р° Р°РґРјРёРЅРєРё -->
         <div id="adminPage" class="page">
-            <h1>Админка</h1>
-            <p>Здесь будет админка</p>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #ff4444; text-shadow: 0 0 15px rgba(255, 68, 68, 0.7); font-size: 1.4em;">
+                    вљ™пёЏ РђРґРјРёРЅ-РїР°РЅРµР»СЊ - Р’РІРѕРґ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ РЅРµРґРµР»Рё
+                </h2>
+            </div>
+
+            <div class="admin-section">
+                <div class="admin-input-group">
+                    <label>Р’С‹Р±РµСЂРёС‚Рµ РЅРµРґРµР»СЋ:</label>
+                    <input type="week" id="weekSelector" class="week-selector">
+                </div>
+
+                <div class="admin-columns">
+                    <!-- РљРѕР»РѕРЅРєР° Р›СѓС‡С€РёРµ РІ СЃРєРѕСЂРѕСЃС‚Рё -->
+                    <div class="admin-column">
+                        <h3 class="admin-column-title">рџЏѓ Р›СѓС‡С€РёРµ РІ СЃРєРѕСЂРѕСЃС‚Рё</h3>
+                        <div id="speedRankings"></div>
+                    </div>
+
+                    <!-- РљРѕР»РѕРЅРєР° Р›СѓС‡С€РёРµ РІ С‚РѕС‡РЅРѕСЃС‚Рё -->
+                    <div class="admin-column">
+                        <h3 class="admin-column-title">рџЋЇ Р›СѓС‡С€РёРµ РІ С‚РѕС‡РЅРѕСЃС‚Рё</h3>
+                        <div id="accuracyRankings"></div>
+                    </div>
+                </div>
+
+                <div class="admin-stats">
+                    <div>РС‚РѕРіРѕ РѕС‡РєРѕРІ Р·Р° СЃРєРѕСЂРѕСЃС‚СЊ: <span id="speedTotal">0</span></div>
+                    <div>РС‚РѕРіРѕ РѕС‡РєРѕРІ Р·Р° С‚РѕС‡РЅРѕСЃС‚СЊ: <span id="accuracyTotal">0</span></div>
+                    <div>Р’СЃРµРіРѕ РѕС‡РєРѕРІ Р·Р° РЅРµРґРµР»СЋ: <span id="weekTotal">0</span></div>
+                </div>
+
+                <div class="admin-buttons">
+                    <button class="admin-save-btn" onclick="saveWeekRankings()">рџ’ѕ РЎРѕС…СЂР°РЅРёС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚С‹</button>
+                    <button class="admin-reset-btn" onclick="clearWeekRankings()">рџ—‘пёЏ РћС‡РёСЃС‚РёС‚СЊ С„РѕСЂРјСѓ</button>
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn-yellow" onclick="showPage('mainPage')">в†ђ РќР° РіР»Р°РІРЅСѓСЋ</button>
+            </div>
         </div>
     </div>
 
-    <!-- Подключаем наш скрипт -->
+    <!-- РњРѕРґР°Р»СЊРЅРѕРµ РѕРєРЅРѕ РґР»СЏ РїРѕР»РЅРѕСЌРєСЂР°РЅРЅРѕРіРѕ РїСЂРѕСЃРјРѕС‚СЂР° -->
+    <div id="imageModal" class="modal">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="fullscreenImage">
+    </div>
+
+    <!-- РџРѕРґРєР»СЋС‡Р°РµРј Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
+
