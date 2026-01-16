@@ -27,11 +27,10 @@ let additionalWorks = {};
 let totalPoints = {};
 let currentSelectedStudent = null;
 let currentWordIndexes = {};
-
-// === ДЛЯ РАЗДЕЛА "КАК ОБЪЯСНИТЬ ОШИБКИ" ===
-let helpSections = {};
+let helpSectionsData = {}; // Изменил название, чтобы избежать конфликта
 let currentSectionId = null;
 let isHelpAdminMode = false;
+let currentSelectedWeek = null;
 
 // Функция обновления статуса синхронизации
 function updateSyncStatus(message, isSuccess = true) {
@@ -41,6 +40,43 @@ function updateSyncStatus(message, isSuccess = true) {
         statusElement.style.color = isSuccess ? '#00ff00' : '#ff4444';
         statusElement.style.textShadow = isSuccess ? '0 0 5px rgba(0, 255, 0, 0.7)' : '0 0 5px rgba(255, 68, 68, 0.7)';
     }
+}
+
+// === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+function getWeekNumber(date) {
+    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+}
+
+function getCurrentWeekId() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const week = getWeekNumber(today);
+    return `${year}-W${week.toString().padStart(2, '0')}`;
+}
+
+function getWeekDates(weekId) {
+    const [year, weekStr] = weekId.split('-W');
+    const week = parseInt(weekStr);
+    
+    const firstDayOfYear = new Date(year, 0, 1);
+    const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
+    
+    const startDate = new Date(year, 0, daysOffset);
+    const endDate = new Date(year, 0, daysOffset + 6);
+    
+    const formatDate = (date) => {
+        return date.toLocaleDateString('ru-RU', { 
+            day: '2-digit', 
+            month: '2-digit' 
+        });
+    };
+    
+    return {
+        start: formatDate(startDate),
+        end: formatDate(endDate)
+    };
 }
 
 // === ЗАГРУЗКА ДАННЫХ ===
@@ -83,6 +119,9 @@ async function loadAllData() {
             totalPoints[doc.id] = doc.data().points || 0;
         });
         
+        // Загружаем разделы помощи
+        await loadHelpSections();
+        
         updateSyncStatus('✅ Данные загружены');
         
     } catch (error) {
@@ -95,6 +134,7 @@ async function loadAllData() {
         studentNames = JSON.parse(localStorage.getItem('studentNames')) || {};
         additionalWorks = JSON.parse(localStorage.getItem('additionalWorks')) || {};
         totalPoints = JSON.parse(localStorage.getItem('totalPoints')) || {};
+        helpSectionsData = JSON.parse(localStorage.getItem('helpSectionsData')) || {};
     }
     
     // Обновляем интерфейс
@@ -103,71 +143,15 @@ async function loadAllData() {
     initializeStudentsGrid();
 }
 
-// === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ НЕДЕЛЬ ===
-function getWeekNumber(date) {
-    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-    const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
-    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
-}
-
-function getCurrentWeekId() {
-    const today = new Date();
-    const year = today.getFullYear();
-    const week = getWeekNumber(today);
-    return `${year}-W${week.toString().padStart(2, '0')}`;
-}
-
-function getWeekDates(weekId) {
-    // Формат: YYYY-WWW
-    const [year, weekStr] = weekId.split('-W');
-    const week = parseInt(weekStr);
-    
-    const firstDayOfYear = new Date(year, 0, 1);
-    const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
-    
-    const startDate = new Date(year, 0, daysOffset);
-    const endDate = new Date(year, 0, daysOffset + 6);
-    
-    const formatDate = (date) => {
-        return date.toLocaleDateString('ru-RU', { 
-            day: '2-digit', 
-            month: '2-digit' 
-        });
-    };
-    
-    return {
-        start: formatDate(startDate),
-        end: formatDate(endDate)
-    };
-}
-
-function getTotalRatingPeriod() {
-    // Здесь можно реализовать логику получения даты начала сбора очков
-    // Для примера будем показывать текущий год
-    const now = new Date();
-    const startYear = 2024; // Год, когда начали собирать очки
-    const currentYear = now.getFullYear();
-    
-    if (startYear === currentYear) {
-        return `с ${startYear} года`;
-    } else {
-        return `${startYear}-${currentYear}`;
-    }
-}
-
 // === ФУНКЦИИ ДЛЯ РЕЙТИНГА ЗА НЕДЕЛЮ ===
-let currentSelectedWeek = getCurrentWeekId(); // Запоминаем выбранную неделю
-
 async function initializeWeekRating(weekId = null) {
     const weekRatingContainer = document.getElementById('weekRatingContainer');
     if (!weekRatingContainer) return;
     
-    // Если weekId не указан, используем сохранённую неделю
     if (!weekId) {
         weekId = currentSelectedWeek || getCurrentWeekId();
     }
     
-    // Сохраняем выбранную неделю
     currentSelectedWeek = weekId;
     
     const weekDates = getWeekDates(weekId);
@@ -189,17 +173,13 @@ async function initializeWeekRating(weekId = null) {
             const data = doc.data();
             const weekPoints = data.weekPoints || {};
             
-            // Создаем массив учеников с очками за неделю
             const studentsWithWeekPoints = students.map(student => ({
                 name: student,
                 points: weekPoints[student] || 0,
                 avatar: `avatars/${student}.png`
             }));
             
-            // Сортируем по убыванию очков
             studentsWithWeekPoints.sort((a, b) => b.points - a.points);
-            
-            // Отображаем только тех, у кого есть очки
             const studentsWithPoints = studentsWithWeekPoints.filter(s => s.points > 0);
             
             if (studentsWithPoints.length === 0) {
@@ -245,7 +225,6 @@ async function initializeTotalRating() {
     if (!totalRatingContainer) return;
     
     try {
-        // Получаем все записи очков за все время
         const totalPointsSnapshot = await db.collection('totalPoints').get();
         const pointsMap = {};
         
@@ -253,14 +232,12 @@ async function initializeTotalRating() {
             pointsMap[doc.id] = doc.data().points || 0;
         });
         
-        // Создаем массив учеников с очками
         const studentsWithTotalPoints = students.map(student => ({
             name: student,
             points: pointsMap[student] || 0,
             avatar: `avatars/${student}.png`
         }));
         
-        // Сортируем по убыванию очков
         studentsWithTotalPoints.sort((a, b) => b.points - a.points);
         
         let html = `
@@ -307,17 +284,16 @@ async function initializeTotalRating() {
         `;
     }
 }
+
 // === ФУНКЦИИ ДЛЯ АДМИНКИ ===
 function initializeAdminPage() {
-    // Устанавливаем текущую неделю по умолчанию
     const weekInput = getCurrentWeekId();
     const weekSelector = document.getElementById('weekSelector');
-    weekSelector.value = weekInput;
+    if (weekSelector) {
+        weekSelector.value = weekInput;
+    }
     
-    // Инициализируем поля для ввода
     generateRankingInputs();
-    
-    // Загружаем данные если они есть
     loadWeekRankings(weekInput);
 }
 
@@ -325,12 +301,13 @@ function generateRankingInputs() {
     const speedContainer = document.getElementById('speedRankings');
     const accuracyContainer = document.getElementById('accuracyRankings');
     
+    if (!speedContainer || !accuracyContainer) return;
+    
     speedContainer.innerHTML = '';
     accuracyContainer.innerHTML = '';
     
-    // Создаем 11 позиций для каждого рейтинга
     for (let i = 1; i <= 11; i++) {
-        const points = 12 - i; // 11, 10, ..., 1
+        const points = 12 - i;
         
         // Позиция для скорости
         const speedGroup = document.createElement('div');
@@ -364,26 +341,25 @@ function calculateTotals() {
     let speedTotal = 0;
     let accuracyTotal = 0;
     
-    // Считаем очки за скорость
     for (let i = 1; i <= 11; i++) {
-        const select = document.getElementById(`speed_${i}`);
-        if (select.value) {
+        const speedSelect = document.getElementById(`speed_${i}`);
+        if (speedSelect && speedSelect.value) {
             speedTotal += (12 - i);
         }
-    }
-    
-    // Считаем очки за точность
-    for (let i = 1; i <= 11; i++) {
-        const select = document.getElementById(`accuracy_${i}`);
-        if (select.value) {
+        
+        const accuracySelect = document.getElementById(`accuracy_${i}`);
+        if (accuracySelect && accuracySelect.value) {
             accuracyTotal += (12 - i);
         }
     }
     
-    // Обновляем отображение
-    document.getElementById('speedTotal').textContent = speedTotal;
-    document.getElementById('accuracyTotal').textContent = accuracyTotal;
-    document.getElementById('weekTotal').textContent = speedTotal + accuracyTotal;
+    const speedTotalEl = document.getElementById('speedTotal');
+    const accuracyTotalEl = document.getElementById('accuracyTotal');
+    const weekTotalEl = document.getElementById('weekTotal');
+    
+    if (speedTotalEl) speedTotalEl.textContent = speedTotal;
+    if (accuracyTotalEl) accuracyTotalEl.textContent = accuracyTotal;
+    if (weekTotalEl) weekTotalEl.textContent = speedTotal + accuracyTotal;
 }
 
 async function loadWeekRankings(weekId) {
@@ -392,13 +368,11 @@ async function loadWeekRankings(weekId) {
         if (doc.exists) {
             const data = doc.data();
             
-            // Заполняем поля скорости
             for (const [position, student] of Object.entries(data.speed || {})) {
                 const select = document.getElementById(`speed_${position}`);
                 if (select) select.value = student;
             }
             
-            // Заполняем поля точности
             for (const [position, student] of Object.entries(data.accuracy || {})) {
                 const select = document.getElementById(`accuracy_${position}`);
                 if (select) select.value = student;
@@ -411,8 +385,29 @@ async function loadWeekRankings(weekId) {
     }
 }
 
+async function updateTotalPoints(weekPoints) {
+    const batch = db.batch();
+    
+    for (const [student, points] of Object.entries(weekPoints)) {
+        const studentRef = db.collection('totalPoints').doc(student);
+        const doc = await studentRef.get();
+        
+        if (doc.exists) {
+            const currentPoints = doc.data().points || 0;
+            batch.update(studentRef, { points: currentPoints + points });
+        } else {
+            batch.set(studentRef, { points: points });
+        }
+    }
+    
+    await batch.commit();
+}
+
 async function saveWeekRankings() {
-    const weekId = document.getElementById('weekSelector').value;
+    const weekSelector = document.getElementById('weekSelector');
+    if (!weekSelector) return;
+    
+    const weekId = weekSelector.value;
     if (!weekId) {
         alert('Выберите неделю!');
         return;
@@ -422,31 +417,22 @@ async function saveWeekRankings() {
     const accuracyRankings = {};
     const weekPoints = {};
     
-    // Собираем данные по скорости
     for (let i = 1; i <= 11; i++) {
-        const select = document.getElementById(`speed_${i}`);
-        if (select.value) {
-            speedRankings[i] = select.value;
-            
-            // Добавляем очки ученику
+        const speedSelect = document.getElementById(`speed_${i}`);
+        if (speedSelect && speedSelect.value) {
+            speedRankings[i] = speedSelect.value;
             const points = 12 - i;
-            weekPoints[select.value] = (weekPoints[select.value] || 0) + points;
+            weekPoints[speedSelect.value] = (weekPoints[speedSelect.value] || 0) + points;
+        }
+        
+        const accuracySelect = document.getElementById(`accuracy_${i}`);
+        if (accuracySelect && accuracySelect.value) {
+            accuracyRankings[i] = accuracySelect.value;
+            const points = 12 - i;
+            weekPoints[accuracySelect.value] = (weekPoints[accuracySelect.value] || 0) + points;
         }
     }
     
-    // Собираем данные по точности
-    for (let i = 1; i <= 11; i++) {
-        const select = document.getElementById(`accuracy_${i}`);
-        if (select.value) {
-            accuracyRankings[i] = select.value;
-            
-            // Добавляем очки ученику
-            const points = 12 - i;
-            weekPoints[select.value] = (weekPoints[select.value] || 0) + points;
-        }
-    }
-    
-    // Проверяем, что выбраны все позиции
     if (Object.keys(speedRankings).length !== 11 || Object.keys(accuracyRankings).length !== 11) {
         if (!confirm('Не все позиции заполнены. Сохранить частичные данные?')) {
             return;
@@ -454,7 +440,6 @@ async function saveWeekRankings() {
     }
     
     try {
-        // Сохраняем рейтинги недели
         await db.collection('weekRankings').doc(weekId).set({
             speed: speedRankings,
             accuracy: accuracyRankings,
@@ -462,14 +447,13 @@ async function saveWeekRankings() {
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        // Обновляем очки за все время
         await updateTotalPoints(weekPoints);
         
         updateSyncStatus('✅ Результаты недели сохранены');
         alert(`Результаты недели ${weekId} успешно сохранены!`);
         
-        // Обновляем отображение рейтинга недели
         initializeWeekRating(weekId);
+        initializeTotalRating();
         
     } catch (error) {
         console.error('Ошибка сохранения:', error);
@@ -481,16 +465,62 @@ async function saveWeekRankings() {
 function clearWeekRankings() {
     if (confirm('Очистить все выбранные значения?')) {
         for (let i = 1; i <= 11; i++) {
-            document.getElementById(`speed_${i}`).value = '';
-            document.getElementById(`accuracy_${i}`).value = '';
+            const speedSelect = document.getElementById(`speed_${i}`);
+            const accuracySelect = document.getElementById(`accuracy_${i}`);
+            
+            if (speedSelect) speedSelect.value = '';
+            if (accuracySelect) accuracySelect.value = '';
         }
         calculateTotals();
     }
 }
 
-// === ОРИГИНАЛЬНЫЕ ФУНКЦИИ ДЛЯ РАБОТ ===
+// === ФУНКЦИИ ДЛЯ СЛОВ ===
+async function saveWords(studentName, wordsArray) {
+    try {
+        await db.collection('words').doc(studentName).set({
+            words: wordsArray,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        studentWords[studentName] = wordsArray;
+        updateSyncStatus('✅ Слова сохранены');
+    } catch (error) {
+        console.error('Ошибка сохранения слов:', error);
+        studentWords[studentName] = wordsArray;
+        localStorage.setItem('studentWords', JSON.stringify(studentWords));
+    }
+}
 
-// Функция сжатия изображений
+async function addNewWord(studentName, word) {
+    const words = studentWords[studentName] || [];
+    if (word.trim() && !words.includes(word.trim())) {
+        words.push(word.trim());
+        await saveWords(studentName, words);
+        if (currentSelectedStudent === studentName) {
+            initializeStudentWorks(studentName);
+        }
+        initializeStudentsGrid();
+    }
+}
+
+async function removeCurrentWord(studentName) {
+    const words = studentWords[studentName] || [];
+    if (words.length > 0) {
+        const currentIndex = currentWordIndexes[studentName] || 0;
+        if (currentIndex >= 0 && currentIndex < words.length) {
+            if (confirm(`Удалить слово "${words[currentIndex]}"?`)) {
+                words.splice(currentIndex, 1);
+                await saveWords(studentName, words);
+                if (currentSelectedStudent === studentName) {
+                    initializeStudentWorks(studentName);
+                }
+                initializeStudentsGrid();
+            }
+        }
+    }
+}
+
+// === ФУНКЦИИ ДЛЯ РАБОТ ===
 function compressImage(file, maxWidth = 1200, quality = 0.8) {
     return new Promise((resolve, reject) => {
         const canvas = document.createElement('canvas');
@@ -535,54 +565,98 @@ function compressImage(file, maxWidth = 1200, quality = 0.8) {
     });
 }
 
-// Сохранение слов
-async function saveWords(studentName, wordsArray) {
+async function saveWork(student, workType, imageBase64, compressionInfo = '') {
+    const workKey = `${student}_${workType}`;
     try {
-        await db.collection('words').doc(studentName).set({
-            words: wordsArray,
-            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        await db.collection('works').doc(workKey).set({
+            image: imageBase64,
+            student: student,
+            workType: workType,
+            compressionInfo: compressionInfo,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-        studentWords[studentName] = wordsArray;
-        updateSyncStatus('✅ Слова сохранены');
+        studentWorks[workKey] = {
+            image: imageBase64,
+            compressionInfo: compressionInfo,
+            timestamp: new Date().toISOString()
+        };
+        updateSyncStatus('✅ Работа сохранена');
     } catch (error) {
-        console.error('Ошибка сохранения слов:', error);
-        studentWords[studentName] = wordsArray;
-        localStorage.setItem('studentWords', JSON.stringify(studentWords));
+        console.error('Ошибка сохранения работы:', error);
+        studentWorks[workKey] = {
+            image: imageBase64,
+            compressionInfo: compressionInfo,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('studentWorks', JSON.stringify(studentWorks));
     }
 }
 
-// Добавление нового слова
-async function addNewWord(studentName, word) {
-    const words = studentWords[studentName] || [];
-    if (word.trim() && !words.includes(word.trim())) {
-        words.push(word.trim());
-        await saveWords(studentName, words);
-        if (currentSelectedStudent === studentName) {
-            initializeStudentWorks(studentName);
-        }
-        initializeStudentsGrid();
-    }
-}
-
-// Удаление текущего слова
-async function removeCurrentWord(studentName) {
-    const words = studentWords[studentName] || [];
-    if (words.length > 0) {
-        const currentIndex = currentWordIndexes[studentName] || 0;
-        if (currentIndex >= 0 && currentIndex < words.length) {
-            if (confirm(`Удалить слово "${words[currentIndex]}"?`)) {
-                words.splice(currentIndex, 1);
-                await saveWords(studentName, words);
-                if (currentSelectedStudent === studentName) {
-                    initializeStudentWorks(studentName);
-                }
-                initializeStudentsGrid();
+async function handleWorkUpload(input, student, workType) {
+    const file = input.files[0];
+    if (file && file.type.startsWith('image/')) {
+        try {
+            updateSyncStatus('🔄 Проверка изображения...');
+            
+            if (file.size > 10 * 1024 * 1024) {
+                throw new Error('Файл слишком большой. Максимум 10MB');
             }
+            
+            updateSyncStatus('🔄 Сжатие изображения...');
+            
+            let compressionResult = await compressImage(file, 1200, 0.8);
+            
+            if (compressionResult.compressedSize > 900000) {
+                updateSyncStatus('🔄 Дополнительное сжатие...');
+                compressionResult = await compressImage(file, 800, 0.6);
+            }
+            
+            if (compressionResult.compressedSize > 950000) {
+                throw new Error('Изображение слишком детализированное после сжатия. Попробуйте другое изображение');
+            }
+            
+            const compressionInfo = `Сжато: ${(compressionResult.originalSize/1024/1024).toFixed(1)}MB → ${(compressionResult.compressedSize/1024/1024).toFixed(1)}MB (${compressionResult.width}×${compressionResult.height})`;
+            
+            await saveWork(student, workType, compressionResult.data, compressionInfo);
+            if (currentSelectedStudent === student) {
+                initializeStudentWorks(student);
+            }
+            updateSyncStatus('✅ Изображение загружено!');
+            
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            updateSyncStatus('❌ Ошибка: ' + error.message, false);
+            alert('Ошибка загрузки: ' + error.message);
+        }
+    } else {
+        alert('Пожалуйста, выберите файл изображения (JPEG, PNG)');
+    }
+}
+
+async function deleteWork(student, workType) {
+    const workKey = `${student}_${workType}`;
+    if (confirm('Вы уверены, что хотите удалить эту работу?')) {
+        try {
+            await db.collection('works').doc(workKey).delete();
+            delete studentWorks[workKey];
+            if (currentSelectedStudent === student) {
+                initializeStudentWorks(student);
+            }
+            updateSyncStatus('✅ Работа удалена');
+            
+        } catch (error) {
+            console.error('Ошибка удаления:', error);
+            delete studentWorks[workKey];
+            localStorage.setItem('studentWorks', JSON.stringify(studentWorks));
+            if (currentSelectedStudent === student) {
+                initializeStudentWorks(student);
+            }
+            updateSyncStatus('✅ Работа удалена (локально)');
         }
     }
 }
 
-// Инициализация сетки учеников
+// === ИНТЕРФЕЙС УЧЕНИКОВ ===
 function initializeStudentsGrid() {
     const studentsGrid = document.getElementById('studentsGrid');
     if (!studentsGrid) return;
@@ -602,20 +676,22 @@ function initializeStudentsGrid() {
     });
 }
 
-// Открытие работ ученика
 function openStudentWorks(student) {
     currentSelectedStudent = student;
     initializeStudentsGrid();
     initializeStudentWorks(student);
     
     const section = document.getElementById('studentWorksSection');
-    section.classList.add('active');
-    document.getElementById('selectedStudentName').textContent = student;
-    
-    section.scrollIntoView({ behavior: 'smooth' });
+    if (section) {
+        section.classList.add('active');
+        const selectedStudentName = document.getElementById('selectedStudentName');
+        if (selectedStudentName) {
+            selectedStudentName.textContent = student;
+        }
+        section.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
-// Инициализация работ ученика
 function initializeStudentWorks(student) {
     const worksList = document.getElementById('worksList');
     if (!worksList) return;
@@ -658,7 +734,6 @@ function initializeStudentWorks(student) {
                     ${createAdditionalWorks(student, 'check')}
                 </div>
             </div>
-            <!-- НОВАЯ КАТЕГОРИЯ: Ваши объяснения -->
             <div class="works-category">
                 <div class="category-title">Ваши объяснения</div>
                 <div class="works-row">
@@ -679,7 +754,6 @@ function initializeStudentWorks(student) {
     worksList.appendChild(workItem);
 }
 
-// Функция для создания секции слов
 function createWordsSection(student) {
     const words = studentWords[student] || [];
     const hasWords = words.length > 0;
@@ -715,7 +789,6 @@ function createWordsSection(student) {
     `;
 }
 
-// Обработка ввода слова
 function handleWordInput(event, student) {
     if (event.key === 'Enter') {
         const input = event.target;
@@ -732,7 +805,6 @@ function handleWordInput(event, student) {
     }
 }
 
-// Навигация по словам
 function navigateWord(student, direction) {
     const words = studentWords[student] || [];
     if (words.length === 0) return;
@@ -761,105 +833,20 @@ function navigateWord(student, direction) {
     }
 }
 
-// Переключение дополнительных работ
-function toggleAdditionalWorks(student, workType) {
-    const element = document.getElementById(`additionalWorks_${student}_${workType}`);
-    if (element) {
-        element.classList.toggle('active');
-        
-        const works = additionalWorks[student] || [];
-        const hasWorksOfType = works.filter(w => w.type === workType).length > 0;
-        
-        if (!hasWorksOfType && element.classList.contains('active')) {
-            addAdditionalWork(student, workType);
-        }
-    }
-}
-
-// Сохранение работы
-async function saveWork(student, workType, imageBase64, compressionInfo = '') {
-    const workKey = `${student}_${workType}`;
-    try {
-        await db.collection('works').doc(workKey).set({
-            image: imageBase64,
-            student: student,
-            workType: workType,
-            compressionInfo: compressionInfo,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        studentWorks[workKey] = {
-            image: imageBase64,
-            compressionInfo: compressionInfo,
-            timestamp: new Date().toISOString()
-        };
-        updateSyncStatus('✅ Работа сохранена');
-    } catch (error) {
-        console.error('Ошибка сохранения работы:', error);
-        studentWorks[workKey] = {
-            image: imageBase64,
-            compressionInfo: compressionInfo,
-            timestamp: new Date().toISOString()
-        };
-        localStorage.setItem('studentWorks', JSON.stringify(studentWorks));
-    }
-}
-
-// Загрузка работы с сжатием
-async function handleWorkUpload(input, student, workType) {
-    const file = input.files[0];
-    if (file && file.type.startsWith('image/')) {
-        try {
-            updateSyncStatus('🔄 Проверка изображения...');
-            
-            if (file.size > 10 * 1024 * 1024) {
-                throw new Error('Файл слишком большой. Максимум 10MB');
-            }
-            
-            updateSyncStatus('🔄 Сжатие изображения...');
-            
-            let compressionResult = await compressImage(file, 1200, 0.8);
-            
-            if (compressionResult.compressedSize > 900000) {
-                updateSyncStatus('🔄 Дополнительное сжатие...');
-                compressionResult = await compressImage(file, 800, 0.6);
-            }
-            
-            if (compressionResult.compressedSize > 950000) {
-                throw new Error('Изображение слишком детализированное после сжатия. Попробуйте другое изображение');
-            }
-            
-            const compressionInfo = `Сжато: ${(compressionResult.originalSize/1024/1024).toFixed(1)}MB → ${(compressionResult.compressedSize/1024/1024).toFixed(1)}MB (${compressionResult.width}×${compressionResult.height})`;
-            
-            await saveWork(student, workType, compressionResult.data, compressionInfo);
-            if (currentSelectedStudent === student) {
-                initializeStudentWorks(student);
-            }
-            updateSyncStatus('✅ Изображение загружено!');
-            
-        } catch (error) {
-            console.error('Ошибка загрузки:', error);
-            updateSyncStatus('❌ Ошибка: ' + error.message, false);
-            alert('Ошибка загрузки: ' + error.message);
-        }
-    } else {
-        alert('Пожалуйста, выберите файл изображения (JPEG, PNG)');
-    }
-}
-
-// Создание области работы
 function createWorkArea(student, workType) {
     const workKey = `${student}_${workType}`;
     const workData = studentWorks[workKey];
     
     if (workData && workData.image) {
         const compressionInfo = workData.compressionInfo ? `<div class="compression-info">${workData.compressionInfo}</div>` : '';
+        const timestamp = workData.timestamp ? formatDateTime(workData.timestamp) : '';
         
         return `
             <div class="upload-area has-work">
                 <img src="${workData.image}" class="work-preview" alt="${workType}" onclick="openFullscreen('${workData.image}')">
                 <div class="work-number">${getWorkTitle(workType)}</div>
                 ${compressionInfo}
-                <div class="upload-time">${formatDateTime(workData.timestamp)}</div>
+                <div class="upload-time">${timestamp}</div>
                 <button class="delete-btn" onclick="deleteWork('${student}', '${workType}')">🗑️ Удалить</button>
                 <input type="file" class="file-input" accept="image/*" onchange="handleWorkUpload(this, '${student}', '${workType}')">
             </div>
@@ -876,7 +863,6 @@ function createWorkArea(student, workType) {
     }
 }
 
-// Получение заголовка работы
 function getWorkTitle(workType) {
     if (workType.startsWith('work') && workType.length > 4) {
         const num = workType.substring(4);
@@ -899,7 +885,55 @@ function getWorkTitle(workType) {
     return titles[workType] || workType;
 }
 
-// Добавление дополнительной работы
+function triggerWorkUpload(areaElement, student, workType) {
+    const fileInput = areaElement.querySelector('.file-input');
+    if (fileInput) {
+        fileInput.click();
+    }
+}
+
+function formatDateTime(timestamp) {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    
+    return `Загружено: ${day}.${month}.${year} ${hours}:${minutes}`;
+}
+
+// === ДОПОЛНИТЕЛЬНЫЕ РАБОТЫ ===
+async function saveAdditionalWorks(studentName, worksArray) {
+    try {
+        await db.collection('additionalWorks').doc(studentName).set({
+            works: worksArray,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        additionalWorks[studentName] = worksArray;
+        updateSyncStatus('✅ Доп. работы сохранены');
+    } catch (error) {
+        console.error('Ошибка сохранения доп. работ:', error);
+        additionalWorks[studentName] = worksArray;
+        localStorage.setItem('additionalWorks', JSON.stringify(additionalWorks));
+    }
+}
+
+function toggleAdditionalWorks(student, workType) {
+    const element = document.getElementById(`additionalWorks_${student}_${workType}`);
+    if (element) {
+        element.classList.toggle('active');
+        
+        const works = additionalWorks[student] || [];
+        const hasWorksOfType = works.filter(w => w.type === workType).length > 0;
+        
+        if (!hasWorksOfType && element.classList.contains('active')) {
+            addAdditionalWork(student, workType);
+        }
+    }
+}
+
 async function addAdditionalWork(studentName, workType) {
     const works = additionalWorks[studentName] || [];
     const newWorkNumber = works.filter(w => w.type === workType).length + 4;
@@ -923,23 +957,6 @@ function getWorkTypeName(workType) {
     }
 }
 
-// Сохранение дополнительных работ
-async function saveAdditionalWorks(studentName, worksArray) {
-    try {
-        await db.collection('additionalWorks').doc(studentName).set({
-            works: worksArray,
-            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        additionalWorks[studentName] = worksArray;
-        updateSyncStatus('✅ Доп. работы сохранены');
-    } catch (error) {
-        console.error('Ошибка сохранения доп. работ:', error);
-        additionalWorks[studentName] = worksArray;
-        localStorage.setItem('additionalWorks', JSON.stringify(additionalWorks));
-    }
-}
-
-// Создание дополнительных работ
 function createAdditionalWorks(student, workType) {
     const works = additionalWorks[student] || [];
     const filteredWorks = works.filter(w => w.type === workType);
@@ -957,166 +974,32 @@ function createAdditionalWorks(student, workType) {
     `;
 }
 
-// Удаление работы
-async function deleteWork(student, workType) {
-    const workKey = `${student}_${workType}`;
-    if (confirm('Вы уверены, что хотите удалить эту работу?')) {
-        try {
-            await db.collection('works').doc(workKey).delete();
-            delete studentWorks[workKey];
-            if (currentSelectedStudent === student) {
-                initializeStudentWorks(student);
-            }
-            updateSyncStatus('✅ Работа удалена');
-            
-        } catch (error) {
-            console.error('Ошибка удаления:', error);
-            delete studentWorks[workKey];
-            localStorage.setItem('studentWorks', JSON.stringify(studentWorks));
-            if (currentSelectedStudent === student) {
-                initializeStudentWorks(student);
-            }
-            updateSyncStatus('✅ Работа удалена (локально)');
-        }
-    }
-}
-
-// Вспомогательные функции
-function triggerWorkUpload(areaElement, student, workType) {
-    const fileInput = areaElement.querySelector('.file-input');
-    fileInput.click();
-}
-
-function formatDateTime(timestamp) {
-    if (!timestamp) return '';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    
-    return `Загружено: ${day}.${month}.${year} ${hours}:${minutes}`;
-}
-
-function openFullscreen(imageSrc) {
-    const modal = document.getElementById('imageModal');
-    const modalImg = document.getElementById('fullscreenImage');
-    modal.style.display = 'block';
-    modalImg.src = imageSrc;
-    
-    modal.onclick = function(event) {
-        if (event.target === modal) {
-            closeModal();
-        }
-    };
-    
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            closeModal();
-        }
-    });
-}
-
-function closeModal() {
-    document.getElementById('imageModal').style.display = 'none';
-}
-
-function showPage(pageId) {
-    document.querySelectorAll('.page').forEach(page => {
-        page.classList.remove('active');
-    });
-    document.getElementById(pageId).classList.add('active');
-    window.scrollTo(0, 0);
-    
-    if (pageId === 'worksPage') {
-        closeStudentWorks();
-    } else if (pageId === 'adminPage') {
-        initializeAdminPage();
-    }
-}
-
-function closeStudentWorks() {
-    currentSelectedStudent = null;
-    const section = document.getElementById('studentWorksSection');
-    if (section) {
-        section.classList.remove('active');
-    }
-    initializeStudentsGrid();
-    const selectedStudentName = document.getElementById('selectedStudentName');
-    if (selectedStudentName) {
-        selectedStudentName.textContent = "📄 Ваши Работы";
-    }
-}
-
-// Инициализация при загрузке
-document.addEventListener('DOMContentLoaded', async function() {
-    await loadAllData();
-    
-    // Загружаем последнюю выбранную неделю из localStorage
-    const savedWeek = localStorage.getItem('lastSelectedWeek');
-    if (savedWeek) {
-        currentSelectedWeek = savedWeek;
-    }
-    
-    // Инициализируем рейтинг с сохранённой неделей
-    initializeWeekRating(currentSelectedWeek);
-    
-    // Инициализируем слушатель для выбора недели в админке
-    const weekSelector = document.getElementById('weekSelector');
-    if (weekSelector) {
-        // Устанавливаем сохранённую неделю в селектор
-        if (currentSelectedWeek) {
-            weekSelector.value = currentSelectedWeek;
-        }
-        
-        weekSelector.addEventListener('change', function() {
-            const weekId = this.value;
-            // Сохраняем выбор
-            currentSelectedWeek = weekId;
-            localStorage.setItem('lastSelectedWeek', weekId);
-            
-            // Загружаем данные для этой недели в админке
-            loadWeekRankings(weekId);
-            // Обновляем рейтинг за неделю на главной
-            initializeWeekRating(weekId);
-        });
-    }
-});
-// === ФУНКЦИИ ДЛЯ РАЗДЕЛА ПОМОЩИ ===
-
-let helpSections = {};
-let currentSectionId = null;
-let isHelpAdminMode = false;
-
-// Загрузка разделов помощи
+// === РАЗДЕЛ ПОМОЩИ ===
 async function loadHelpSections() {
     try {
         const snapshot = await db.collection('helpSections').get();
-        helpSections = {};
+        helpSectionsData = {};
         
         snapshot.forEach(doc => {
-            helpSections[doc.id] = doc.data();
+            helpSectionsData[doc.id] = doc.data();
         });
         
         updateHelpUI();
         
     } catch (error) {
         console.error('Ошибка загрузки разделов:', error);
-        helpSections = JSON.parse(localStorage.getItem('helpSections')) || {};
+        helpSectionsData = JSON.parse(localStorage.getItem('helpSectionsData')) || {};
     }
 }
 
-// Обновление интерфейса
 function updateHelpUI() {
     const sectionsList = document.getElementById('sectionsList');
     const helpSectionsView = document.getElementById('helpSectionsView');
     
-    // Режим админа (редактирование)
     if (isHelpAdminMode && sectionsList) {
         sectionsList.innerHTML = '';
         
-        Object.entries(helpSections).forEach(([id, section]) => {
+        Object.entries(helpSectionsData).forEach(([id, section]) => {
             const sectionDiv = document.createElement('div');
             sectionDiv.className = `section-card ${currentSectionId === id ? 'active' : ''}`;
             sectionDiv.innerHTML = `
@@ -1130,17 +1013,15 @@ function updateHelpUI() {
             sectionsList.appendChild(sectionDiv);
         });
         
-        // Если нет разделов
-        if (Object.keys(helpSections).length === 0) {
+        if (Object.keys(helpSectionsData).length === 0) {
             sectionsList.innerHTML = '<p style="text-align: center; color: #aaa;">Нет разделов. Добавьте первый!</p>';
         }
     }
     
-    // Режим ученика (просмотр)
     if (!isHelpAdminMode && helpSectionsView) {
         helpSectionsView.innerHTML = '';
         
-        Object.entries(helpSections).forEach(([id, section]) => {
+        Object.entries(helpSectionsData).forEach(([id, section]) => {
             const sectionDiv = document.createElement('div');
             sectionDiv.className = 'section-view';
             sectionDiv.innerHTML = `
@@ -1150,14 +1031,12 @@ function updateHelpUI() {
             helpSectionsView.appendChild(sectionDiv);
         });
         
-        // Если нет разделов
-        if (Object.keys(helpSections).length === 0) {
+        if (Object.keys(helpSectionsData).length === 0) {
             helpSectionsView.innerHTML = '<p style="text-align: center; color: #aaa; padding: 40px;">Инструкции пока не добавлены...</p>';
         }
     }
 }
 
-// Переключение режима админ/ученик
 function toggleHelpMode() {
     isHelpAdminMode = !isHelpAdminMode;
     
@@ -1165,38 +1044,50 @@ function toggleHelpMode() {
     const studentMode = document.getElementById('studentMode');
     const toggleBtn = document.getElementById('toggleModeBtn');
     
-    if (isHelpAdminMode) {
-        adminMode.style.display = 'block';
-        studentMode.style.display = 'none';
-        toggleBtn.textContent = '👀 Режим просмотра';
-        toggleBtn.style.backgroundColor = '#00ff00';
-        toggleBtn.style.color = '#000';
-    } else {
-        adminMode.style.display = 'none';
-        studentMode.style.display = 'block';
-        toggleBtn.textContent = '🔧 Режим редактирования';
-        toggleBtn.style.backgroundColor = '';
-        toggleBtn.style.color = '';
+    if (adminMode && studentMode && toggleBtn) {
+        if (isHelpAdminMode) {
+            adminMode.style.display = 'block';
+            studentMode.style.display = 'none';
+            toggleBtn.textContent = '👀 Режим просмотра';
+            toggleBtn.style.backgroundColor = '#00ff00';
+            toggleBtn.style.color = '#000';
+        } else {
+            adminMode.style.display = 'none';
+            studentMode.style.display = 'block';
+            toggleBtn.textContent = '🔧 Режим редактирования';
+            toggleBtn.style.backgroundColor = '';
+            toggleBtn.style.color = '';
+        }
     }
     
     updateHelpUI();
 }
 
-// Добавление нового раздела
 function addNewSection() {
-    document.getElementById('sectionModal').style.display = 'block';
-    document.getElementById('sectionNameInput').focus();
+    const modal = document.getElementById('sectionModal');
+    if (modal) {
+        modal.style.display = 'block';
+        const input = document.getElementById('sectionNameInput');
+        if (input) input.focus();
+    }
 }
 
-// Закрытие модального окна
 function closeSectionModal() {
-    document.getElementById('sectionModal').style.display = 'none';
-    document.getElementById('sectionNameInput').value = '';
+    const modal = document.getElementById('sectionModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    const input = document.getElementById('sectionNameInput');
+    if (input) {
+        input.value = '';
+    }
 }
 
-// Сохранение нового раздела
 async function saveNewSection() {
-    const title = document.getElementById('sectionNameInput').value.trim();
+    const input = document.getElementById('sectionNameInput');
+    if (!input) return;
+    
+    const title = input.value.trim();
     
     if (!title) {
         alert('Введите название раздела!');
@@ -1204,7 +1095,7 @@ async function saveNewSection() {
     }
     
     try {
-        const id = 'section_' + Date.now(); // Уникальный ID
+        const id = 'section_' + Date.now();
         const newSection = {
             title: title,
             content: '<p>Начните писать здесь...</p>',
@@ -1213,11 +1104,11 @@ async function saveNewSection() {
         };
         
         await db.collection('helpSections').doc(id).set(newSection);
-        helpSections[id] = newSection;
+        helpSectionsData[id] = newSection;
         
         closeSectionModal();
         updateHelpUI();
-        editSection(id); // Открываем для редактирования
+        editSection(id);
         
         updateSyncStatus('✅ Раздел добавлен');
         
@@ -1227,21 +1118,20 @@ async function saveNewSection() {
     }
 }
 
-// Редактирование раздела
 function editSection(sectionId) {
     currentSectionId = sectionId;
-    const section = helpSections[sectionId];
+    const section = helpSectionsData[sectionId];
     
     const editorContainer = document.getElementById('editorContainer');
-    editorContainer.style.display = 'block';
-    editorContainer.innerHTML = createEditorHTML(section);
+    if (editorContainer) {
+        editorContainer.style.display = 'block';
+        editorContainer.innerHTML = createEditorHTML(section);
+        initEditor();
+    }
     
-    // Активируем редактор
-    initEditor();
     updateHelpUI();
 }
 
-// Создание HTML для редактора
 function createEditorHTML(section) {
     return `
         <h3 style="color: #00ff00; margin-bottom: 20px;">Редактирование: ${section?.title || 'Новый раздел'}</h3>
@@ -1272,7 +1162,6 @@ function createEditorHTML(section) {
     `;
 }
 
-// Инициализация редактора
 function initEditor() {
     const editor = document.getElementById('editorContent');
     if (editor) {
@@ -1280,26 +1169,22 @@ function initEditor() {
     }
 }
 
-// Форматирование текста
 function formatText(command) {
     document.execCommand(command, false, null);
     updateEditorState();
 }
 
-// Изменение цвета текста
 function changeTextColor(color) {
     document.execCommand('foreColor', false, color);
     updateEditorState();
 }
 
-// Вставка списка
 function insertList(type) {
     const command = type === 'unordered' ? 'insertUnorderedList' : 'insertOrderedList';
     document.execCommand(command, false, null);
     updateEditorState();
 }
 
-// Вставка ссылки
 function insertLink() {
     const url = prompt('Введите URL:', 'https://');
     if (url) {
@@ -1308,9 +1193,7 @@ function insertLink() {
     }
 }
 
-// Обновление состояния редактора
 function updateEditorState() {
-    // Можно добавить подсветку активных кнопок
     const toolbar = document.getElementById('editorToolbar');
     if (toolbar) {
         const commands = ['bold', 'italic', 'underline'];
@@ -1323,11 +1206,13 @@ function updateEditorState() {
     }
 }
 
-// Сохранение содержимого раздела
 async function saveSectionContent() {
     if (!currentSectionId) return;
     
-    const content = document.getElementById('editorContent').innerHTML;
+    const editorContent = document.getElementById('editorContent');
+    if (!editorContent) return;
+    
+    const content = editorContent.innerHTML;
     
     try {
         await db.collection('helpSections').doc(currentSectionId).update({
@@ -1335,7 +1220,7 @@ async function saveSectionContent() {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        helpSections[currentSectionId].content = content;
+        helpSectionsData[currentSectionId].content = content;
         updateSyncStatus('✅ Раздел сохранен');
         alert('Изменения сохранены!');
         
@@ -1347,20 +1232,21 @@ async function saveSectionContent() {
     }
 }
 
-// Отмена редактирования
 function cancelEditing() {
     currentSectionId = null;
-    document.getElementById('editorContainer').style.display = 'none';
+    const editorContainer = document.getElementById('editorContainer');
+    if (editorContainer) {
+        editorContainer.style.display = 'none';
+    }
     updateHelpUI();
 }
 
-// Удаление раздела
 async function deleteSection(sectionId) {
     if (!confirm('Удалить этот раздел?')) return;
     
     try {
         await db.collection('helpSections').doc(sectionId).delete();
-        delete helpSections[sectionId];
+        delete helpSectionsData[sectionId];
         
         if (currentSectionId === sectionId) {
             cancelEditing();
@@ -1375,12 +1261,46 @@ async function deleteSection(sectionId) {
     }
 }
 
-// Обновляем функцию showPage
+// === ОБЩИЕ ФУНКЦИИ ===
+function openFullscreen(imageSrc) {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('fullscreenImage');
+    
+    if (modal && modalImg) {
+        modal.style.display = 'block';
+        modalImg.src = imageSrc;
+        
+        modal.onclick = function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+        
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+    }
+}
+
+function closeModal() {
+    const modal = document.getElementById('imageModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(page => {
         page.classList.remove('active');
     });
-    document.getElementById(pageId).classList.add('active');
+    
+    const pageElement = document.getElementById(pageId);
+    if (pageElement) {
+        pageElement.classList.add('active');
+    }
+    
     window.scrollTo(0, 0);
     
     if (pageId === 'worksPage') {
@@ -1392,15 +1312,71 @@ function showPage(pageId) {
     }
 }
 
-// В loadAllData добавляем загрузку разделов
-async function loadAllData() {
-    try {
-        // ... существующий код ...
-        
-        // Загружаем разделы помощи
-        await loadHelpSections();
-        
-    } catch (error) {
-        // ... обработка ошибок ...
+function closeStudentWorks() {
+    currentSelectedStudent = null;
+    const section = document.getElementById('studentWorksSection');
+    if (section) {
+        section.classList.remove('active');
+    }
+    initializeStudentsGrid();
+    const selectedStudentName = document.getElementById('selectedStudentName');
+    if (selectedStudentName) {
+        selectedStudentName.textContent = "📄 Ваши Работы";
     }
 }
+
+// === ИНИЦИАЛИЗАЦИЯ ===
+document.addEventListener('DOMContentLoaded', async function() {
+    // Создаем глобальные функции
+    window.showPage = showPage;
+    window.openFullscreen = openFullscreen;
+    window.closeModal = closeModal;
+    window.handleWordInput = handleWordInput;
+    window.navigateWord = navigateWord;
+    window.removeCurrentWord = removeCurrentWord;
+    window.handleWorkUpload = handleWorkUpload;
+    window.triggerWorkUpload = triggerWorkUpload;
+    window.deleteWork = deleteWork;
+    window.toggleAdditionalWorks = toggleAdditionalWorks;
+    window.calculateTotals = calculateTotals;
+    window.saveWeekRankings = saveWeekRankings;
+    window.clearWeekRankings = clearWeekRankings;
+    window.toggleHelpMode = toggleHelpMode;
+    window.addNewSection = addNewSection;
+    window.closeSectionModal = closeSectionModal;
+    window.saveNewSection = saveNewSection;
+    window.formatText = formatText;
+    window.changeTextColor = changeTextColor;
+    window.insertList = insertList;
+    window.insertLink = insertLink;
+    window.updateEditorState = updateEditorState;
+    window.saveSectionContent = saveSectionContent;
+    window.cancelEditing = cancelEditing;
+    window.editSection = editSection;
+    window.deleteSection = deleteSection;
+    
+    await loadAllData();
+    
+    const savedWeek = localStorage.getItem('lastSelectedWeek');
+    if (savedWeek) {
+        currentSelectedWeek = savedWeek;
+    }
+    
+    initializeWeekRating(currentSelectedWeek);
+    
+    const weekSelector = document.getElementById('weekSelector');
+    if (weekSelector) {
+        if (currentSelectedWeek) {
+            weekSelector.value = currentSelectedWeek;
+        }
+        
+        weekSelector.addEventListener('change', function() {
+            const weekId = this.value;
+            currentSelectedWeek = weekId;
+            localStorage.setItem('lastSelectedWeek', weekId);
+            
+            loadWeekRankings(weekId);
+            initializeWeekRating(weekId);
+        });
+    }
+});
