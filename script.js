@@ -1078,3 +1078,324 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 });
+// === ФУНКЦИИ ДЛЯ РАЗДЕЛА ПОМОЩИ ===
+
+let helpSections = {};
+let currentSectionId = null;
+let isHelpAdminMode = false;
+
+// Загрузка разделов помощи
+async function loadHelpSections() {
+    try {
+        const snapshot = await db.collection('helpSections').get();
+        helpSections = {};
+        
+        snapshot.forEach(doc => {
+            helpSections[doc.id] = doc.data();
+        });
+        
+        updateHelpUI();
+        
+    } catch (error) {
+        console.error('Ошибка загрузки разделов:', error);
+        helpSections = JSON.parse(localStorage.getItem('helpSections')) || {};
+    }
+}
+
+// Обновление интерфейса
+function updateHelpUI() {
+    const sectionsList = document.getElementById('sectionsList');
+    const helpSectionsView = document.getElementById('helpSectionsView');
+    
+    // Режим админа (редактирование)
+    if (isHelpAdminMode && sectionsList) {
+        sectionsList.innerHTML = '';
+        
+        Object.entries(helpSections).forEach(([id, section]) => {
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = `section-card ${currentSectionId === id ? 'active' : ''}`;
+            sectionDiv.innerHTML = `
+                <div class="section-title">${section.title || 'Без названия'}</div>
+                <div class="section-actions">
+                    <button class="edit-section-btn" onclick="editSection('${id}')">✏️</button>
+                    <button class="delete-section-btn" onclick="deleteSection('${id}')">🗑️</button>
+                </div>
+            `;
+            sectionDiv.onclick = () => editSection(id);
+            sectionsList.appendChild(sectionDiv);
+        });
+        
+        // Если нет разделов
+        if (Object.keys(helpSections).length === 0) {
+            sectionsList.innerHTML = '<p style="text-align: center; color: #aaa;">Нет разделов. Добавьте первый!</p>';
+        }
+    }
+    
+    // Режим ученика (просмотр)
+    if (!isHelpAdminMode && helpSectionsView) {
+        helpSectionsView.innerHTML = '';
+        
+        Object.entries(helpSections).forEach(([id, section]) => {
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'section-view';
+            sectionDiv.innerHTML = `
+                <h3>${section.title || 'Без названия'}</h3>
+                <div class="section-content">${section.content || '<p style="color: #aaa;">Содержание пока не добавлено...</p>'}</div>
+            `;
+            helpSectionsView.appendChild(sectionDiv);
+        });
+        
+        // Если нет разделов
+        if (Object.keys(helpSections).length === 0) {
+            helpSectionsView.innerHTML = '<p style="text-align: center; color: #aaa; padding: 40px;">Инструкции пока не добавлены...</p>';
+        }
+    }
+}
+
+// Переключение режима админ/ученик
+function toggleHelpMode() {
+    isHelpAdminMode = !isHelpAdminMode;
+    
+    const adminMode = document.getElementById('adminMode');
+    const studentMode = document.getElementById('studentMode');
+    const toggleBtn = document.getElementById('toggleModeBtn');
+    
+    if (isHelpAdminMode) {
+        adminMode.style.display = 'block';
+        studentMode.style.display = 'none';
+        toggleBtn.textContent = '👀 Режим просмотра';
+        toggleBtn.style.backgroundColor = '#00ff00';
+        toggleBtn.style.color = '#000';
+    } else {
+        adminMode.style.display = 'none';
+        studentMode.style.display = 'block';
+        toggleBtn.textContent = '🔧 Режим редактирования';
+        toggleBtn.style.backgroundColor = '';
+        toggleBtn.style.color = '';
+    }
+    
+    updateHelpUI();
+}
+
+// Добавление нового раздела
+function addNewSection() {
+    document.getElementById('sectionModal').style.display = 'block';
+    document.getElementById('sectionNameInput').focus();
+}
+
+// Закрытие модального окна
+function closeSectionModal() {
+    document.getElementById('sectionModal').style.display = 'none';
+    document.getElementById('sectionNameInput').value = '';
+}
+
+// Сохранение нового раздела
+async function saveNewSection() {
+    const title = document.getElementById('sectionNameInput').value.trim();
+    
+    if (!title) {
+        alert('Введите название раздела!');
+        return;
+    }
+    
+    try {
+        const id = 'section_' + Date.now(); // Уникальный ID
+        const newSection = {
+            title: title,
+            content: '<p>Начните писать здесь...</p>',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        await db.collection('helpSections').doc(id).set(newSection);
+        helpSections[id] = newSection;
+        
+        closeSectionModal();
+        updateHelpUI();
+        editSection(id); // Открываем для редактирования
+        
+        updateSyncStatus('✅ Раздел добавлен');
+        
+    } catch (error) {
+        console.error('Ошибка создания раздела:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+// Редактирование раздела
+function editSection(sectionId) {
+    currentSectionId = sectionId;
+    const section = helpSections[sectionId];
+    
+    const editorContainer = document.getElementById('editorContainer');
+    editorContainer.style.display = 'block';
+    editorContainer.innerHTML = createEditorHTML(section);
+    
+    // Активируем редактор
+    initEditor();
+    updateHelpUI();
+}
+
+// Создание HTML для редактора
+function createEditorHTML(section) {
+    return `
+        <h3 style="color: #00ff00; margin-bottom: 20px;">Редактирование: ${section?.title || 'Новый раздел'}</h3>
+        
+        <div class="editor-toolbar" id="editorToolbar">
+            <button class="toolbar-btn" onclick="formatText('bold')" title="Жирный"><b>B</b></button>
+            <button class="toolbar-btn" onclick="formatText('italic')" title="Курсив"><i>I</i></button>
+            <button class="toolbar-btn" onclick="formatText('underline')" title="Подчеркнутый"><u>U</u></button>
+            <div style="width: 1px; background: #444; height: 30px;"></div>
+            <input type="color" class="color-picker" id="textColor" title="Цвет текста" onchange="changeTextColor(this.value)">
+            <div style="width: 1px; background: #444; height: 30px;"></div>
+            <button class="toolbar-btn" onclick="insertList('unordered')" title="Маркированный список">•</button>
+            <button class="toolbar-btn" onclick="insertList('ordered')" title="Нумерованный список">1.</button>
+            <button class="toolbar-btn" onclick="insertLink()" title="Ссылка">🔗</button>
+        </div>
+        
+        <div 
+            class="editor-content" 
+            id="editorContent" 
+            contenteditable="true"
+            oninput="updateEditorState()"
+        >${section?.content || '<p>Начните писать здесь...</p>'}</div>
+        
+        <div class="editor-buttons">
+            <button class="cancel-editor-btn" onclick="cancelEditing()">Отмена</button>
+            <button class="save-editor-btn" onclick="saveSectionContent()">💾 Сохранить</button>
+        </div>
+    `;
+}
+
+// Инициализация редактора
+function initEditor() {
+    const editor = document.getElementById('editorContent');
+    if (editor) {
+        editor.focus();
+    }
+}
+
+// Форматирование текста
+function formatText(command) {
+    document.execCommand(command, false, null);
+    updateEditorState();
+}
+
+// Изменение цвета текста
+function changeTextColor(color) {
+    document.execCommand('foreColor', false, color);
+    updateEditorState();
+}
+
+// Вставка списка
+function insertList(type) {
+    const command = type === 'unordered' ? 'insertUnorderedList' : 'insertOrderedList';
+    document.execCommand(command, false, null);
+    updateEditorState();
+}
+
+// Вставка ссылки
+function insertLink() {
+    const url = prompt('Введите URL:', 'https://');
+    if (url) {
+        document.execCommand('createLink', false, url);
+        updateEditorState();
+    }
+}
+
+// Обновление состояния редактора
+function updateEditorState() {
+    // Можно добавить подсветку активных кнопок
+    const toolbar = document.getElementById('editorToolbar');
+    if (toolbar) {
+        const commands = ['bold', 'italic', 'underline'];
+        commands.forEach(cmd => {
+            const btn = toolbar.querySelector(`[onclick*="${cmd}"]`);
+            if (btn) {
+                btn.classList.toggle('active', document.queryCommandState(cmd));
+            }
+        });
+    }
+}
+
+// Сохранение содержимого раздела
+async function saveSectionContent() {
+    if (!currentSectionId) return;
+    
+    const content = document.getElementById('editorContent').innerHTML;
+    
+    try {
+        await db.collection('helpSections').doc(currentSectionId).update({
+            content: content,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        helpSections[currentSectionId].content = content;
+        updateSyncStatus('✅ Раздел сохранен');
+        alert('Изменения сохранены!');
+        
+        updateHelpUI();
+        
+    } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+// Отмена редактирования
+function cancelEditing() {
+    currentSectionId = null;
+    document.getElementById('editorContainer').style.display = 'none';
+    updateHelpUI();
+}
+
+// Удаление раздела
+async function deleteSection(sectionId) {
+    if (!confirm('Удалить этот раздел?')) return;
+    
+    try {
+        await db.collection('helpSections').doc(sectionId).delete();
+        delete helpSections[sectionId];
+        
+        if (currentSectionId === sectionId) {
+            cancelEditing();
+        }
+        
+        updateHelpUI();
+        updateSyncStatus('✅ Раздел удален');
+        
+    } catch (error) {
+        console.error('Ошибка удаления:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+// Обновляем функцию showPage
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    document.getElementById(pageId).classList.add('active');
+    window.scrollTo(0, 0);
+    
+    if (pageId === 'worksPage') {
+        closeStudentWorks();
+    } else if (pageId === 'adminPage') {
+        initializeAdminPage();
+    } else if (pageId === 'helpPage') {
+        loadHelpSections();
+    }
+}
+
+// В loadAllData добавляем загрузку разделов
+async function loadAllData() {
+    try {
+        // ... существующий код ...
+        
+        // Загружаем разделы помощи
+        await loadHelpSections();
+        
+    } catch (error) {
+        // ... обработка ошибок ...
+    }
+}
