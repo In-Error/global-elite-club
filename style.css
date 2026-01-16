@@ -847,7 +847,7 @@ h1 {
     margin-bottom: 12px;
     font-size: 1.1em;
     padding: 5px 0;
-    border-bottom: 2px solid #667eea;
+    border-bottom: 2px solid #ffd700; /* Основные работы - желтый */
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
@@ -866,7 +866,7 @@ h1 {
 
 .upload-area {
     flex: 1;
-    border: 2px dashed #667eea;
+    border: 2px dashed #ffd700; /* Основные работы - желтый */
     border-radius: 8px;
     padding: 15px;
     text-align: center;
@@ -940,7 +940,7 @@ h1 {
 }
 
 .add-work-btn {
-    background: #667eea;
+    background: #ffd700; /* Основные работы - желтый */
     color: white;
     border: none;
     width: 50px;
@@ -967,39 +967,27 @@ h1 {
     display: none;
     margin-top: 15px;
     padding-top: 15px;
-    border-top: 2px dashed #667eea;
+    border-top: 2px dashed #ffd700; /* Основные работы - желтый */
 }
 
 .additional-works.active {
     display: block;
 }
 
-/* СТИЛИ ДЛЯ НОВОЙ КАТЕГОРИИ "ВАШИ ОБЪЯСНЕНИЯ" */
-.works-category:nth-child(3) .upload-area {
-    border-color: #ff6b35;
-    box-shadow: 0 0 8px rgba(255, 107, 53, 0.3);
+/* ЦВЕТА КАТЕГОРИЙ */
+.works-category:nth-child(1) .upload-area,
+.works-category:nth-child(1) .add-work-btn {
+    border-color: #ffd700; /* Основные работы - желтый */
 }
 
-.works-category:nth-child(3) .upload-area:hover {
-    box-shadow: 0 0 15px rgba(255, 107, 53, 0.6);
+.works-category:nth-child(2) .upload-area,
+.works-category:nth-child(2) .add-work-btn {
+    border-color: #00ff00; /* Проверки - зеленый */
 }
 
-.works-category:nth-child(3) .upload-area.has-work {
-    border-style: solid;
-    border-color: #ff6b35;
-    background: rgba(255, 107, 53, 0.05);
-    box-shadow: 0 0 12px rgba(255, 107, 53, 0.5);
-}
-
+.works-category:nth-child(3) .upload-area,
 .works-category:nth-child(3) .add-work-btn {
-    background: #ff6b35;
-    color: #000;
-    box-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
-}
-
-.works-category:nth-child(3) .add-work-btn:hover {
-    background: #e65a2a;
-    box-shadow: 0 0 15px rgba(255, 107, 53, 0.7);
+    border-color: #9370db; /* Ваши объяснения - фиолетовый */
 }
 
 .modal {
