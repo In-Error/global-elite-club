@@ -181,22 +181,6 @@ function updateRatings() {
     });
 }
 
-// === ФУНКЦИЯ ПОИСКА ===
-
-function filterParticipants() {
-    const query = document.getElementById('searchInput').value.toLowerCase().trim();
-    const allCards = document.querySelectorAll('.participant-card');
-
-    allCards.forEach(card => {
-        const studentName = card.querySelector('.name').textContent.toLowerCase();
-        if (studentName.includes(query)) {
-            card.style.display = 'flex';
-        } else {
-            card.style.display = 'none';
-        }
-    });
-}
-
 // === ОСТАЛЬНАЯ ЛОГИКА ===
 
 function updateSyncStatus(message, isSuccess = true) {
