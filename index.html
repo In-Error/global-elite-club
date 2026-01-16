@@ -44,6 +44,29 @@
         <!-- Админ-панель -->
         <div id="adminPage" class="page">
             <h2 style="text-align: center; color: #ffd700; margin-bottom: 20px;">📊 Ввод результатов недели</h2>
+            <div class="admin-panel">
+    <div class="week-selector">
+        <label for="weekNumber">Номер недели:</label>
+        <input type="number" id="weekNumber" class="week-input" min="1" value="1">
+    </div>
+    
+    <div class="rating-input">
+        <div class="rating-column">
+            <div class="rating-title">⚡ Скорость (1-е место — сверху)</div>
+            <div id="speedInputs">
+                <!-- Динамически создадутся поля -->
+            </div>
+        </div>
+        <div class="rating-column">
+            <div class="rating-title">✅ Ошибки (1-е место — сверху)</div>
+            <div id="errorsInputs">
+                <!-- Динамически создадутся поля -->
+            </div>
+        </div>
+    </div>
+    
+    <button class="save-btn" onclick="saveWeeklyResults()">💾 Сохранить результаты недели</button>
+</div>
             
             <div class="admin-panel">
                 <div class="week-selector">
