@@ -20,14 +20,17 @@
         <div id="mainPage" class="page active">
             <!-- Рейтинг за неделю -->
             <div class="rating-section">
-                <h2 class="rating-title">Рейтинг за неделю</h2>
+                <h2 class="rating-title">🏆 Рейтинг за неделю</h2>
                 <div class="week-rating-container">
-                    <div class="week-rating-stats">
-                        <div>🏆 Лучший в скорости: <span id="bestSpeedStudent">-</span></div>
-                        <div>🎯 Лучший в точности: <span id="bestAccuracyStudent">-</span></div>
-                        <div>⭐ Общие очки: <span id="totalPoints">0</span></div>
-                    </div>
                     <div class="week-rating-list" id="weekRatingList"></div>
+                </div>
+            </div>
+
+            <!-- Рейтинг за все время -->
+            <div class="rating-section">
+                <h2 class="rating-title">⭐ Рейтинг за все время</h2>
+                <div class="total-rating-container">
+                    <div class="total-rating-list" id="totalRatingList"></div>
                 </div>
             </div>
 
@@ -78,70 +81,40 @@
         <div id="adminPage" class="page">
             <div style="text-align: center; margin-bottom: 20px;">
                 <h2 style="color: #ff4444; text-shadow: 0 0 15px rgba(255, 68, 68, 0.7); font-size: 1.4em;">
-                    ⚙️ Админ-панель
+                    ⚙️ Админ-панель - Ввод результатов недели
                 </h2>
             </div>
 
             <div class="admin-section">
-                <h3 class="admin-title">🏆 Назначить лучших за неделю</h3>
-                
                 <div class="admin-input-group">
-                    <label>Лучший в скорости:</label>
-                    <select id="bestSpeedSelect">
-                        <option value="">Выберите ученика</option>
-                        <option value="Alina">Alina</option>
-                        <option value="Artem">Artem</option>
-                        <option value="Dania">Dania</option>
-                        <option value="Denis">Denis</option>
-                        <option value="Lera">Lera</option>
-                        <option value="Nastia Che">Nastia Che</option>
-                        <option value="Nastia S">Nastia S</option>
-                        <option value="Natasha">Natasha</option>
-                        <option value="Rita">Rita</option>
-                        <option value="Selin">Selin</option>
-                        <option value="Vika">Vika</option>
-                    </select>
+                    <label>Выберите неделю:</label>
+                    <input type="week" id="weekSelector" class="week-selector">
                 </div>
 
-                <div class="admin-input-group">
-                    <label>Лучший в точности:</label>
-                    <select id="bestAccuracySelect">
-                        <option value="">Выберите ученика</option>
-                        <option value="Alina">Alina</option>
-                        <option value="Artem">Artem</option>
-                        <option value="Dania">Dania</option>
-                        <option value="Denis">Denis</option>
-                        <option value="Lera">Lera</option>
-                        <option value="Nastia Che">Nastia Che</option>
-                        <option value="Nastia S">Nastia S</option>
-                        <option value="Natasha">Natasha</option>
-                        <option value="Rita">Rita</option>
-                        <option value="Selin">Selin</option>
-                        <option value="Vika">Vika</option>
-                    </select>
+                <div class="admin-columns">
+                    <!-- Колонка Лучшие в скорости -->
+                    <div class="admin-column">
+                        <h3 class="admin-column-title">🏃 Лучшие в скорости</h3>
+                        <div id="speedRankings"></div>
+                    </div>
+
+                    <!-- Колонка Лучшие в точности -->
+                    <div class="admin-column">
+                        <h3 class="admin-column-title">🎯 Лучшие в точности</h3>
+                        <div id="accuracyRankings"></div>
+                    </div>
                 </div>
 
-                <div class="admin-input-group">
-                    <label>Дополнительные очки (кому):</label>
-                    <select id="extraPointsStudent">
-                        <option value="">Выберите ученика</option>
-                        <option value="Alina">Alina</option>
-                        <option value="Artem">Artem</option>
-                        <option value="Dania">Dania</option>
-                        <option value="Denis">Denis</option>
-                        <option value="Lera">Lera</option>
-                        <option value="Nastia Che">Nastia Che</option>
-                        <option value="Nastia S">Nastia S</option>
-                        <option value="Natasha">Natasha</option>
-                        <option value="Rita">Rita</option>
-                        <option value="Selin">Selin</option>
-                        <option value="Vika">Vika</option>
-                    </select>
-                    <input type="number" id="extraPointsAmount" min="1" max="20" placeholder="Кол-во очков" style="width: 100px;">
+                <div class="admin-stats">
+                    <div>Итого очков за скорость: <span id="speedTotal">0</span></div>
+                    <div>Итого очков за точность: <span id="accuracyTotal">0</span></div>
+                    <div>Всего очков за неделю: <span id="weekTotal">0</span></div>
                 </div>
 
-                <button class="admin-save-btn" onclick="saveWeekResults()">💾 Сохранить результаты недели</button>
-                <button class="admin-reset-btn" onclick="resetWeekResults()">🔄 Сбросить неделю</button>
+                <div class="admin-buttons">
+                    <button class="admin-save-btn" onclick="saveWeekRankings()">💾 Сохранить результаты</button>
+                    <button class="admin-reset-btn" onclick="clearWeekRankings()">🗑️ Очистить форму</button>
+                </div>
             </div>
 
             <div class="nav-buttons">
