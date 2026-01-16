@@ -1,4 +1,4 @@
-// === КОНФИГУРАЦИЯ FIREBASE ===
+// Конфигурация Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyA1gMGXixXqfgptc0-Nx5fRWCbS2lefXLY",
     authDomain: "global-elite-club-dcd0d.firebaseapp.com",
@@ -13,15 +13,34 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// Данные студентов
+// Данные
+const rating1Titles = [
+    "Гепард Скорости", "Турбо-сокол", "Быстрая лиса", "Енот-шустрик", 
+    "Шустрый зайчик", "Шустрая белочка", "Неутомимый Муравей", 
+    "Ёжик-быстроножик", "Трудяга-бобр", "Проворная выдра", "Смелая черепашка"
+];
+
+const rating2Titles = [
+    "Орел точности", "Пантера-точность", "Мудрая сова", "Лиса-точность", 
+    "Дельфин смысла", "Умный котик", "Аккуратная косуля", 
+    "Внимательный медвежонок", "Пингвин ясности", "Аккуратный кролик", "Потенциальная звезда"
+];
+
 const students = [
-    "Alina", "Artem", "Dania", "Denis", "Lera", "Nastia Che",
+    "Alina", "Artem", "Dania", "Denis", "Lera", "Nastia Che", 
     "Nastia S", "Natasha", "Rita", "Selin", "Vika"
 ];
 
 // Хранилища данных
-let studentData = {};
+let studentWords = {};
+let studentWorks = {};
+let studentNames = {};
+let additionalWorks = {};
+let explanationsWorks = {};
+let weeklyResults = {};
+let overallRating = {};
 let currentSelectedStudent = null;
+let currentWordIndexes = {};
 
 // Обновление статуса синхронизации
 function updateSyncStatus(message, isSuccess = true) {
@@ -29,11 +48,6 @@ function updateSyncStatus(message, isSuccess = true) {
     statusElement.textContent = message;
     statusElement.style.color = isSuccess ? '#00ff00' : '#ff4444';
     statusElement.style.textShadow = isSuccess ? '0 0 8px rgba(0, 255, 0, 0.7)' : '0 0 8px rgba(255, 68, 68, 0.7)';
-    if (!isSuccess) {
-        statusElement.classList.add('error');
-    } else {
-        statusElement.classList.remove('error');
-    }
 }
 
 // Загрузка всех данных
@@ -41,406 +55,509 @@ async function loadAllData() {
     try {
         updateSyncStatus('🔄 Загрузка данных...');
         
-        // Создаем базовую структуру данных для каждого студента
-        students.forEach(student => {
-            studentData[student] = {
-                name: student,
-                speedPoints: 0,
-                errorPoints: 0,
-                totalPoints: 0,
-                speedPlaces: [],
-                errorPlaces: [],
-                totalParticipations: 0,
-                completedTasks: 0
-            };
+        // Загружаем слова
+        const wordsSnapshot = await db.collection('words').get();
+        studentWords = {};
+        wordsSnapshot.forEach(doc => {
+            studentWords[doc.id] = doc.data().words || [];
         });
         
-        // Загружаем сохраненные рейтинги
-        const ratingsSnapshot = await db.collection('ratings').get();
-        
-        if (ratingsSnapshot.empty) {
-            console.log('Нет сохраненных данных о рейтингах');
-        } else {
-            ratingsSnapshot.forEach(doc => {
-                const data = doc.data();
-                // Обрабатываем данные рейтингов
-            });
-        }
+        // Загружаем работы
+        const worksSnapshot = await db.collection('works').get();
+        studentWorks = {};
+        worksSnapshot.forEach(doc => {
+            studentWorks[doc.id] = doc.data();
+        });
+
+        // Загружаем имена для рейтингов
+        const namesSnapshot = await db.collection('ratingNames').get();
+        studentNames = {};
+        namesSnapshot.forEach(doc => {
+            studentNames[doc.id] = doc.data().name;
+        });
+
+        // Загружаем дополнительные работы
+        const additionalSnapshot = await db.collection('additionalWorks').get();
+        additionalWorks = {};
+        additionalSnapshot.forEach(doc => {
+            additionalWorks[doc.id] = doc.data().works || [];
+        });
+
+        // Загружаем объяснения
+        const explanationsSnapshot = await db.collection('explanations').get();
+        explanationsWorks = {};
+        explanationsSnapshot.forEach(doc => {
+            explanationsWorks[doc.id] = doc.data();
+        });
+
+        // Загружаем недельные результаты
+        const weeklySnapshot = await db.collection('weeklyResults').get();
+        weeklyResults = {};
+        weeklySnapshot.forEach(doc => {
+            weeklyResults[doc.id] = doc.data();
+        });
         
         updateSyncStatus('✅ Данные загружены');
         
-        // Инициализируем интерфейс с данными по умолчанию
-        initializeInterface();
+        // Инициализируем интерфейс
+        initializeRatings();
+        initializeStudentsGrid();
+        calculateOverallRating();
         
     } catch (error) {
-        console.error('Ошибка загрузки:', error);
-        updateSyncStatus('⚠️ Используем локальные данные', false);
+        console.error('Ошибка загрузки данных:', error);
+        updateSyncStatus('❌ Ошибка загрузки', false);
         
-        // Используем данные по умолчанию
-        students.forEach(student => {
-            studentData[student] = {
-                name: student,
-                speedPoints: 0,
-                errorPoints: 0,
-                totalPoints: 0,
-                speedPlaces: [],
-                errorPlaces: [],
-                totalParticipations: 0,
-                completedTasks: Math.floor(Math.random() * 10) // Для примера
-            };
-        });
-        
-        initializeInterface();
-    }
-}
-
-// Инициализация интерфейса
-function initializeInterface() {
-    // Инициализируем админку
-    initializeAdminPanel();
-    
-    // Обновляем отображение рейтингов
-    updateRatingsDisplay();
-}
-
-// Инициализация админ-панели
-function initializeAdminPanel() {
-    const speedInputs = document.getElementById('speedInputs');
-    const errorsInputs = document.getElementById('errorsInputs');
-    
-    speedInputs.innerHTML = '';
-    errorsInputs.innerHTML = '';
-    
-    // Создаем выпадающие списки для рейтинга скорости
-    for (let i = 1; i <= 11; i++) {
-        const speedDiv = document.createElement('div');
-        speedDiv.className = 'position-input';
-        speedDiv.innerHTML = `
-            <span class="position-number">${i}</span>
-            <select class="student-select" id="speed_${i}">
-                <option value="">-- Выберите --</option>
-                ${students.map(student => `<option value="${student}">${student}</option>`).join('')}
-            </select>
-        `;
-        speedInputs.appendChild(speedDiv);
-    }
-    
-    // Создаем выпадающие списки для рейтинга ошибок
-    for (let i = 1; i <= 11; i++) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'position-input';
-        errorDiv.innerHTML = `
-            <span class="position-number">${i}</span>
-            <select class="student-select" id="error_${i}">
-                <option value="">-- Выберите --</option>
-                ${students.map(student => `<option value="${student}">${student}</option>`).join('')}
-            </select>
-        `;
-        errorsInputs.appendChild(errorDiv);
-    }
-}
-
-// Обновление отображения рейтингов
-function updateRatingsDisplay() {
-    // Сортируем студентов по общему количеству очков
-    const sortedStudents = Object.values(studentData).sort((a, b) => {
-        return b.totalPoints - a.totalPoints;
-    });
-    
-    // Обновляем ТОП-3
-    updateTop3Display(sortedStudents);
-    
-    // Обновляем сетку всех участников
-    updateAllParticipantsGrid(sortedStudents);
-}
-
-// Обновление ТОП-3
-function updateTop3Display(sortedStudents) {
-    const top3Container = document.getElementById('top3Container');
-    top3Container.innerHTML = '';
-    
-    // Показываем только первых трех
-    for (let i = 0; i < Math.min(3, sortedStudents.length); i++) {
-        const student = sortedStudents[i];
-        const card = createParticipantCard(student, true, i + 1);
-        top3Container.appendChild(card);
-    }
-}
-
-// Обновление сетки всех участников
-function updateAllParticipantsGrid(sortedStudents) {
-    const allParticipantsGrid = document.getElementById('allParticipantsGrid');
-    allParticipantsGrid.innerHTML = '';
-    
-    sortedStudents.forEach((student, index) => {
-        const card = createParticipantCard(student, false, index + 1);
-        allParticipantsGrid.appendChild(card);
-    });
-}
-
-// Создание карточки участника
-function createParticipantCard(student, isTop3 = false, place = null) {
-    const card = document.createElement('div');
-    card.className = `participant-card ${isTop3 ? 'top-three' : ''}`;
-    
-    // Определяем количество звезд для ТОП-3
-    let starsHtml = '';
-    if (isTop3 && place <= 3) {
-        const starCount = 5 - (place - 1) * 1;
-        for (let i = 0; i < starCount; i++) {
-            starsHtml += '<div class="star">⭐</div>';
+        // Fallback на localStorage
+        try {
+            studentWords = JSON.parse(localStorage.getItem('studentWords')) || {};
+            studentWorks = JSON.parse(localStorage.getItem('studentWorks')) || {};
+            studentNames = JSON.parse(localStorage.getItem('studentNames')) || {};
+            additionalWorks = JSON.parse(localStorage.getItem('additionalWorks')) || {};
+            explanationsWorks = JSON.parse(localStorage.getItem('explanationsWorks')) || {};
+            weeklyResults = JSON.parse(localStorage.getItem('weeklyResults')) || {};
+            
+            initializeRatings();
+            initializeStudentsGrid();
+            calculateOverallRating();
+            
+        } catch (e) {
+            console.error('Ошибка загрузки из localStorage:', e);
         }
     }
+}
+
+// Инициализация рейтингов
+function initializeRatings() {
+    const rating1List = document.getElementById('rating1List');
+    const rating2List = document.getElementById('rating2List');
+
+    rating1List.innerHTML = '';
+    rating2List.innerHTML = '';
+
+    // Рейтинг 1
+    rating1Titles.forEach((title, index) => {
+        const isTopThree = index < 3;
+        const studentItem = createRatingItem(index + 1, title, 'rating1', isTopThree);
+        rating1List.appendChild(studentItem);
+    });
+
+    // Рейтинг 2
+    rating2Titles.forEach((title, index) => {
+        const isTopThree = index < 3;
+        const studentItem = createRatingItem(index + 1, title, 'rating2', isTopThree);
+        rating2List.appendChild(studentItem);
+    });
+}
+
+// Создание элемента рейтинга
+function createRatingItem(place, title, ratingType, isTopThree = false) {
+    const item = document.createElement('div');
+    item.className = `student-item ${isTopThree ? 'top-three' : ''}`;
     
-    card.innerHTML = `
-        ${isTop3 ? `<div class="stars-container">${starsHtml}</div>` : ''}
-        <div class="avatar-container">
-            <img class="avatar" 
-                 src="avatars/${student.name}.png" 
-                 alt="${student.name}"
-                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${student.name}&background=0066ff&color=fff&size=100'">
+    const nameKey = `${ratingType}_${place}`;
+    const savedName = studentNames[nameKey] || '';
+    
+    item.innerHTML = `
+        <div class="name-input-container">
+            <input 
+                type="text" 
+                class="name-input" 
+                placeholder="Введите имя" 
+                value="${savedName}"
+                maxlength="15"
+                oninput="saveRatingName('${ratingType}', ${place}, this.value)"
+            >
         </div>
-        <div class="name">${student.name}</div>
-        <div class="points">Очков: <span>${student.totalPoints}</span></div>
-        <div class="tasks">Заданий: <span>${student.completedTasks}</span></div>
+        <div class="student-info">
+            <div class="student-name">
+                <span>${place} место</span>
+                <span class="place-badge">${12 - place} очков</span>
+            </div>
+            <div class="student-title">${title}</div>
+        </div>
     `;
     
-    // При клике на карточку показываем информацию
-    card.onclick = () => {
-        alert(`🎯 ${student.name}\n\n🏆 Общих очков: ${student.totalPoints}\n⚡ Очков скорости: ${student.speedPoints}\n✅ Очков ошибок: ${student.errorPoints}\n📊 Участий: ${student.totalParticipations}\n✅ Выполнено заданий: ${student.completedTasks}`);
-    };
-    
-    return card;
+    return item;
 }
 
-// Фильтрация участников
-function filterParticipants() {
-    const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
-    const allCards = document.querySelectorAll('.participant-card');
-    
-    if (!searchQuery) {
-        // Показать все карточки
-        allCards.forEach(card => {
-            card.style.display = 'flex';
+// Сохранение имени в рейтинге
+async function saveRatingName(ratingType, position, name) {
+    const key = `${ratingType}_${position}`;
+    try {
+        await db.collection('ratingNames').doc(key).set({
+            name: name,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         });
-        return;
+        studentNames[key] = name;
+        updateSyncStatus('✅ Имя сохранено');
+    } catch (error) {
+        console.error('Ошибка сохранения имени:', error);
+        updateSyncStatus('❌ Ошибка сохранения', false);
+        
+        // Fallback
+        studentNames[key] = name;
+        localStorage.setItem('studentNames', JSON.stringify(studentNames));
     }
-    
-    // Фильтруем карточки
-    allCards.forEach(card => {
-        const studentName = card.querySelector('.name').textContent.toLowerCase();
-        if (studentName.includes(searchQuery)) {
-            card.style.display = 'flex';
-        } else {
-            card.style.display = 'none';
-        }
-    });
 }
 
-// Сохранение результатов недели
-async function saveWeeklyResults() {
-    const weekNumber = document.getElementById('weekNumber').value;
-    
-    if (!weekNumber || weekNumber < 1) {
+// Сохранение недельных результатов
+async function saveWeeklyResults(ratingType) {
+    const weekNumber = prompt('Введите номер недели (например: 1, 2, 3...):');
+    if (!weekNumber || isNaN(weekNumber) || weekNumber < 1) {
         alert('Пожалуйста, введите корректный номер недели');
         return;
     }
-    
-    // Собираем данные рейтинга скорости
-    const speedResults = [];
-    for (let i = 1; i <= 11; i++) {
-        const select = document.getElementById(`speed_${i}`);
-        if (select.value) {
-            speedResults.push(select.value);
+
+    const ratingList = document.getElementById(`${ratingType}List`);
+    if (!ratingList) return;
+
+    const inputs = ratingList.querySelectorAll('.name-input');
+    const results = [];
+
+    inputs.forEach(input => {
+        if (input.value.trim()) {
+            results.push(input.value.trim());
         }
-    }
-    
-    // Собираем данные рейтинга ошибок
-    const errorResults = [];
-    for (let i = 1; i <= 11; i++) {
-        const select = document.getElementById(`error_${i}`);
-        if (select.value) {
-            errorResults.push(select.value);
-        }
-    }
-    
-    if (speedResults.length === 0 && errorResults.length === 0) {
-        alert('Нет данных для сохранения. Заполните хотя бы один рейтинг.');
+    });
+
+    if (results.length === 0) {
+        alert('Нет данных для сохранения. Заполните имена в рейтинге.');
         return;
     }
-    
+
+    if (results.length !== 11) {
+        const confirmSave = confirm(`В рейтинге заполнено ${results.length} из 11 мест. Продолжить сохранение?`);
+        if (!confirmSave) return;
+    }
+
     try {
-        updateSyncStatus('🔄 Сохранение...');
-        
-        // Сохраняем данные в Firebase
-        await db.collection('weeklyResults').doc(`week_${weekNumber}`).set({
+        const docId = `week${weekNumber}_${ratingType}`;
+        await db.collection('weeklyResults').doc(docId).set({
             week: parseInt(weekNumber),
-            speed: speedResults,
-            errors: errorResults,
+            ratingType: ratingType,
+            results: results,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        // Обновляем очки студентов
-        updateStudentPoints(speedResults, errorResults);
+        weeklyResults[docId] = { 
+            week: parseInt(weekNumber), 
+            ratingType: ratingType, 
+            results: results 
+        };
         
-        updateSyncStatus('✅ Результаты сохранены');
-        alert(`✅ Результаты недели ${weekNumber} успешно сохранены!`);
-        
-        // Обновляем отображение
-        updateRatingsDisplay();
+        updateSyncStatus(`✅ Результаты недели ${weekNumber} сохранены`);
+        calculateOverallRating();
+        alert(`Результаты недели ${weekNumber} успешно сохранены!`);
         
     } catch (error) {
-        console.error('Ошибка сохранения:', error);
+        console.error('Ошибка сохранения недельных результатов:', error);
         updateSyncStatus('❌ Ошибка сохранения', false);
         alert('Ошибка при сохранении. Попробуйте еще раз.');
     }
 }
 
-// Обновление очков студентов
-function updateStudentPoints(speedResults, errorResults) {
-    // Сбрасываем очки
-    Object.keys(studentData).forEach(studentName => {
-        studentData[studentName].speedPoints = 0;
-        studentData[studentName].errorPoints = 0;
-        studentData[studentName].totalPoints = 0;
-        studentData[studentName].speedPlaces = [];
-        studentData[studentName].errorPlaces = [];
-        studentData[studentName].totalParticipations = 0;
-    });
+// Расчет общего рейтинга
+function calculateOverallRating() {
+    // Система подсчета: 1 место = 11 очков, 2 = 10, ..., 11 = 1 очко
+    const ratingPoints = {
+        1: 11, 2: 10, 3: 9, 4: 8, 5: 7, 6: 6, 7: 5, 8: 4, 9: 3, 10: 2, 11: 1
+    };
+
+    const allResults = {};
     
-    // Начисляем очки за скорость (1 место = 11 очков, 2 = 10, ..., 11 = 1)
-    speedResults.forEach((studentName, index) => {
-        if (studentData[studentName]) {
-            const points = 11 - index;
-            studentData[studentName].speedPoints += points;
-            studentData[studentName].totalPoints += points;
-            studentData[studentName].speedPlaces.push(index + 1);
-            studentData[studentName].totalParticipations++;
+    students.forEach(student => {
+        allResults[student] = { 
+            points: 0, 
+            places: [], 
+            weeks: new Set() 
+        };
+    });
+
+    Object.values(weeklyResults).forEach(weekData => {
+        if (weekData.results && weekData.results.length > 0) {
+            weekData.results.forEach((studentName, index) => {
+                const place = index + 1;
+                if (allResults[studentName]) {
+                    allResults[studentName].points += ratingPoints[place] || 0;
+                    allResults[studentName].places.push(place);
+                    allResults[studentName].weeks.add(weekData.week);
+                }
+            });
         }
     });
-    
-    // Начисляем очки за ошибки
-    errorResults.forEach((studentName, index) => {
-        if (studentData[studentName]) {
-            const points = 11 - index;
-            studentData[studentName].errorPoints += points;
-            studentData[studentName].totalPoints += points;
-            studentData[studentName].errorPlaces.push(index + 1);
-            studentData[studentName].totalParticipations++;
-        }
-    });
+
+    const sortedResults = Object.entries(allResults)
+        .map(([name, data]) => ({
+            name,
+            points: data.points,
+            places: data.places,
+            weeksCount: data.weeks.size,
+            avgPlace: data.places.length > 0 
+                ? (data.places.reduce((a, b) => a + b, 0) / data.places.length).toFixed(1)
+                : '-'
+        }))
+        .sort((a, b) => {
+            if (b.points !== a.points) {
+                return b.points - a.points;
+            }
+            return parseFloat(a.avgPlace) - parseFloat(b.avgPlace);
+        });
+
+    overallRating = sortedResults;
+    displayOverallRating();
 }
 
-// Переключение страниц
-function showPage(pageId) {
-    // Скрываем все страницы
-    document.querySelectorAll('.page').forEach(page => {
-        page.classList.remove('active');
-    });
+// Отображение общего рейтинга
+function displayOverallRating() {
+    const overallList = document.getElementById('overallRatingList');
     
-    // Показываем выбранную страницу
-    document.getElementById(pageId).classList.add('active');
-    
-    // Если это страница работ, инициализируем сетку студентов
-    if (pageId === 'worksPage') {
-        initializeStudentsGrid();
+    if (overallRating.length === 0) {
+        overallList.innerHTML = `
+            <div style="text-align: center; color: #aaa; padding: 30px;">
+                📊 Нет данных для общего рейтинга<br>
+                <small>Сохраните результаты хотя бы одной недели</small>
+            </div>
+        `;
+        return;
     }
-    
-    // Прокручиваем наверх
-    window.scrollTo(0, 0);
+
+    overallList.innerHTML = '';
+
+    overallRating.forEach((student, index) => {
+        const isTopThree = index < 3;
+        const item = document.createElement('div');
+        item.className = `student-item ${isTopThree ? 'top-three' : ''}`;
+        
+        let medalClass = 'medal-other';
+        let medalIcon = `${index + 1} 🏅`;
+        
+        if (index === 0) {
+            medalClass = 'medal-gold';
+            medalIcon = '🥇 1';
+        } else if (index === 1) {
+            medalClass = 'medal-silver';
+            medalIcon = '🥈 2';
+        } else if (index === 2) {
+            medalClass = 'medal-bronze';
+            medalIcon = '🥉 3';
+        }
+
+        item.innerHTML = `
+            <div class="medal-container ${medalClass}">
+                ${medalIcon}
+            </div>
+            <div class="student-info">
+                <div class="student-name">${student.name}</div>
+                <div class="stats-container">
+                    <span class="stat-item stat-points">${student.points} очков</span>
+                    <span class="stat-item stat-avg">Ср.место: ${student.avgPlace}</span>
+                    <span class="stat-item stat-weeks">Недель: ${student.weeksCount}</span>
+                    <span class="stat-item stat-participations">Участий: ${student.places.length}</span>
+                </div>
+            </div>
+        `;
+        
+        overallList.appendChild(item);
+    });
 }
 
-// Инициализация сетки студентов на странице работ
+// Показ истории недель
+function showWeeklyHistory() {
+    if (Object.keys(weeklyResults).length === 0) {
+        alert('История недель пуста. Сохраните результаты хотя бы одной недели.');
+        return;
+    }
+
+    const weeks = {};
+    
+    Object.values(weeklyResults).forEach(weekData => {
+        if (!weeks[weekData.week]) {
+            weeks[weekData.week] = { rating1: [], rating2: [] };
+        }
+        if (weekData.ratingType === 'rating1') {
+            weeks[weekData.week].rating1 = weekData.results;
+        } else {
+            weeks[weekData.week].rating2 = weekData.results;
+        }
+    });
+
+    const sortedWeeks = Object.keys(weeks).sort((a, b) => b - a);
+    let historyText = '📅 ИСТОРИЯ НЕДЕЛЬНЫХ РЕЗУЛЬТАТОВ\n\n';
+
+    sortedWeeks.forEach(week => {
+        historyText += `━━━━━━ Неделя ${week} ━━━━━━\n`;
+        
+        if (weeks[week].rating1.length > 0) {
+            historyText += '\n🏆 Рейтинг 1:\n';
+            weeks[week].rating1.forEach((student, idx) => {
+                const points = 11 - idx;
+                historyText += `  ${idx + 1}. ${student} (${points} очков)\n`;
+            });
+        }
+        
+        if (weeks[week].rating2.length > 0) {
+            historyText += '\n⭐ Рейтинг 2:\n';
+            weeks[week].rating2.forEach((student, idx) => {
+                const points = 11 - idx;
+                historyText += `  ${idx + 1}. ${student} (${points} очков)\n`;
+            });
+        }
+        
+        historyText += '\n';
+    });
+
+    alert(historyText);
+}
+
+// Инициализация сетки учеников
 function initializeStudentsGrid() {
     const studentsGrid = document.getElementById('studentsGrid');
     studentsGrid.innerHTML = '';
     
     students.forEach(student => {
+        const avatarUrl = `https://raw.githubusercontent.com/nellipterova/Rating/main/avatars${student}.png`;
         const card = document.createElement('div');
-        card.className = 'student-card';
+        card.className = `student-card ${currentSelectedStudent === student ? 'active' : ''}`;
         card.innerHTML = `
+            <img src="${avatarUrl}" 
+                 alt="${student}" 
+                 style="width: 60px; height: 60px; border-radius: 50%; margin-bottom: 10px; border: 2px solid #ffd700;"
+                 onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\"student-card-name\">${student}</div>'">
             <div class="student-card-name">${student}</div>
-            <div class="student-card-words">Заданий: ${studentData[student]?.completedTasks || 0}</div>
         `;
         card.onclick = () => openStudentWorks(student);
         studentsGrid.appendChild(card);
     });
 }
 
-// Открытие работ студента
+// Функции для страницы работ
 function openStudentWorks(student) {
     currentSelectedStudent = student;
+    initializeStudentsGrid();
+    initializeStudentWorks(student);
     
-    // Подсвечиваем выбранную карточку
-    document.querySelectorAll('.student-card').forEach(card => {
-        card.classList.remove('active');
-    });
-    event.currentTarget.classList.add('active');
-    
-    // Показываем секцию работ
     const section = document.getElementById('studentWorksSection');
     section.classList.add('active');
-    document.getElementById('selectedStudentName').textContent = student;
+    document.getElementById('selectedStudentName').innerHTML = `<span>📄 ${student} - Работы</span>`;
     
-    // Прокручиваем к секции
     section.scrollIntoView({ behavior: 'smooth' });
-    
-    // Инициализируем работы (здесь можно добавить реальные данные)
-    initializeStudentWorks(student);
 }
 
-// Закрытие работ студента
 function closeStudentWorks() {
     currentSelectedStudent = null;
     const section = document.getElementById('studentWorksSection');
     section.classList.remove('active');
-    
-    // Снимаем подсветку со всех карточек
-    document.querySelectorAll('.student-card').forEach(card => {
-        card.classList.remove('active');
-    });
+    initializeStudentsGrid();
 }
 
-// Инициализация работ студента (заглушка)
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    document.getElementById(pageId).classList.add('active');
+    window.scrollTo(0, 0);
+    
+    if (pageId === 'worksPage') {
+        closeStudentWorks();
+    }
+}
+
+// Инициализация работ ученика
 function initializeStudentWorks(student) {
     const worksList = document.getElementById('worksList');
-    worksList.innerHTML = `
-        <div style="text-align: center; padding: 40px; color: #aaa;">
-            <h3 style="color: #fff; margin-bottom: 20px;">Работы ${student}</h3>
-            <p>Здесь будут отображаться загруженные работы студента</p>
-            <p style="margin-top: 20px; font-size: 0.9em;">
-                ⚠️ Функционал загрузки работ будет добавлен позже
-            </p>
-        </div>
-    `;
-}
-
-// Модальное окно
-function openFullscreen(imageSrc) {
-    const modal = document.getElementById('imageModal');
-    const modalImg = document.getElementById('fullscreenImage');
-    modal.style.display = 'block';
-    modalImg.src = imageSrc;
+    worksList.innerHTML = '<div style="text-align: center; padding: 20px; color: #aaa;">Загрузка работ...</div>';
     
-    modal.onclick = function(event) {
-        if (event.target === modal) {
-            closeModal();
+    setTimeout(() => {
+        // Получаем данные о работах ученика
+        const studentData = studentWorks[student] || {};
+        const words = studentWords[student] || [];
+        const additional = additionalWorks[student] || [];
+        const explanations = explanationsWorks[student] || {};
+        
+        let html = '<div style="display: flex; flex-direction: column; gap: 20px;">';
+        
+        // Основные работы
+        if (studentData.works && studentData.works.length > 0) {
+            html += '<div style="margin-bottom: 15px;">';
+            html += '<h3 style="color: #0066ff; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">Основные работы:</h3>';
+            html += '<div style="display: flex; flex-direction: column; gap: 10px;">';
+            
+            studentData.works.forEach((work, index) => {
+                html += `
+                    <div style="background: rgba(0, 102, 255, 0.1); padding: 15px; border-radius: 10px; border-left: 4px solid #0066ff;">
+                        <div style="font-weight: bold; color: #fff; margin-bottom: 5px;">Работа ${index + 1}</div>
+                        ${work.type ? `<div style="color: #aaa; font-size: 0.9em; margin-bottom: 5px;">${work.type}</div>` : ''}
+                        ${work.date ? `<div style="color: #aaa; font-size: 0.9em;">Дата: ${work.date}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            html += '</div></div>';
         }
-    };
-    
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            closeModal();
+        
+        // Дополнительные работы
+        if (additional.length > 0) {
+            html += '<div style="margin-bottom: 15px;">';
+            html += '<h3 style="color: #00ff00; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">Дополнительные работы:</h3>';
+            html += '<div style="display: flex; flex-direction: column; gap: 10px;">';
+            
+            additional.forEach((work, index) => {
+                html += `
+                    <div style="background: rgba(0, 255, 0, 0.1); padding: 15px; border-radius: 10px; border-left: 4px solid #00ff00;">
+                        <div style="font-weight: bold; color: #fff; margin-bottom: 5px;">Доп. работа ${index + 1}</div>
+                        ${work.type ? `<div style="color: #aaa; font-size: 0.9em; margin-bottom: 5px;">${work.type}</div>` : ''}
+                        ${work.date ? `<div style="color: #aaa; font-size: 0.9em;">Дата: ${work.date}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            html += '</div></div>';
         }
-    });
+        
+        // Объяснения
+        if (explanations.works && explanations.works.length > 0) {
+            html += '<div style="margin-bottom: 15px;">';
+            html += '<h3 style="color: #ffd700; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">Объяснения:</h3>';
+            html += '<div style="display: flex; flex-direction: column; gap: 10px;">';
+            
+            explanations.works.forEach((work, index) => {
+                html += `
+                    <div style="background: rgba(255, 215, 0, 0.1); padding: 15px; border-radius: 10px; border-left: 4px solid #ffd700;">
+                        <div style="font-weight: bold; color: #fff; margin-bottom: 5px;">Объяснение ${index + 1}</div>
+                        ${work.type ? `<div style="color: #aaa; font-size: 0.9em; margin-bottom: 5px;">${work.type}</div>` : ''}
+                        ${work.date ? `<div style="color: #aaa; font-size: 0.9em;">Дата: ${work.date}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            html += '</div></div>';
+        }
+        
+        // Слова
+        if (words.length > 0) {
+            html += '<div style="margin-bottom: 15px;">';
+            html += '<h3 style="color: #9d4edd; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px;">Выученные слова:</h3>';
+            html += '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+            
+            words.forEach(word => {
+                html += `<span style="background: rgba(157, 78, 221, 0.2); color: #9d4edd; padding: 5px 10px; border-radius: 15px; font-size: 0.9em; border: 1px solid rgba(157, 78, 221, 0.3);">${word}</span>`;
+            });
+            
+            html += '</div></div>';
+        }
+        
+        html += '</div>';
+        
+        if (html.includes('Основные работы:') || html.includes('Дополнительные работы:') || html.includes('Объяснения:') || html.includes('Выученные слова:')) {
+            worksList.innerHTML = html;
+        } else {
+            worksList.innerHTML = '<div style="text-align: center; padding: 40px; color: #aaa;">Работы пока не добавлены</div>';
+        }
+    }, 300);
 }
 
-function closeModal() {
-    document.getElementById('imageModal').style.display = 'none';
-}
-
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Приложение запускается...');
-    loadAllData();
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadAllData();
 });
