@@ -6,39 +6,39 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Р’Р°С€ Р РµР№С‚РёРЅРі</title>
+    <title>Ваш Рейтинг</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>в­ђMy Starsв­ђ</h1>
-            <div class="sync-status" id="syncStatus">рџ”„ РЎРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ...</div>
+            <h1>⭐My Stars⭐</h1>
+            <div class="sync-status" id="syncStatus">🔄 Синхронизация...</div>
         </header>
 
-        <!-- Р“Р»Р°РІРЅР°СЏ СЃС‚СЂР°РЅРёС†Р° СЃ СЂРµР№С‚РёРЅРіР°РјРё -->
+        <!-- Главная страница с рейтингами -->
         <div id="mainPage" class="page active">
-            <!-- Р РµР№С‚РёРЅРі Р·Р° РЅРµРґРµР»СЋ -->
+            <!-- Рейтинг за неделю -->
             <div class="rating-section">
                 <div class="rating-container week" id="weekRatingContainer">
-                    <!-- Р РµР№С‚РёРЅРі Р·Р° РЅРµРґРµР»СЋ Р±СѓРґРµС‚ Р·Р°РіСЂСѓР¶РµРЅ Р·РґРµСЃСЊ -->
+                    <!-- Рейтинг за неделю будет загружен здесь -->
                 </div>
             </div>
 
-            <!-- Р РµР№С‚РёРЅРі Р·Р° РІСЃРµ РІСЂРµРјСЏ -->
+            <!-- Рейтинг за все время -->
             <div class="rating-section">
                 <div class="rating-container total" id="totalRatingContainer">
-                    <!-- Р РµР№С‚РёРЅРі Р·Р° РІСЃРµ РІСЂРµРјСЏ Р±СѓРґРµС‚ Р·Р°РіСЂСѓР¶РµРЅ Р·РґРµСЃСЊ -->
+                    <!-- Рейтинг за все время будет загружен здесь -->
                 </div>
             </div>
 
             <div class="nav-buttons">
-                <button class="nav-btn-blue" onclick="showPage('worksPage')">рџ“„ Р’Р°С€Рё СЂР°Р±РѕС‚С‹</button>
-                <button class="nav-btn-admin" onclick="showPage('adminPage')">вљ™пёЏ РђРґРјРёРЅРєР°</button>
+                <button class="nav-btn-blue" onclick="showPage('worksPage')">📄 Ваши работы</button>
+                <button class="nav-btn-admin" onclick="showPage('adminPage')">⚙️ Админка</button>
             </div>
         </div>
 
-        <!-- РЎС‚СЂР°РЅРёС†Р° РїСЂРѕСЃРјРѕС‚СЂР° СЂР°Р±РѕС‚ -->
+        <!-- Страница просмотра работ -->
         <div id="worksPage" class="page">
             <div class="date-picker">
                 <input type="date" class="date-input" id="workDate">
@@ -46,7 +46,7 @@
 
             <div style="text-align: center; margin-bottom: 20px;">
                 <h2 style="color: #0066ff; text-shadow: 0 0 15px rgba(0, 100, 255, 0.7); font-size: 1.4em;">
-                    рџ“„ Р’Р°С€Рё Р Р°Р±РѕС‚С‹
+                    📄 Ваши Работы
                 </h2>
             </div>
 
@@ -54,73 +54,72 @@
 
             <div class="student-works-section" id="studentWorksSection">
                 <div class="selected-student-header">
-                    <div class="selected-student-name" id="selectedStudentName">рџ“„ Р’Р°С€Рё Р Р°Р±РѕС‚С‹</div>
-                    <button class="close-works" onclick="closeStudentWorks()">вњ• Р—Р°РєСЂС‹С‚СЊ</button>
+                    <div class="selected-student-name" id="selectedStudentName">📄 Ваши Работы</div>
+                    <button class="close-works" onclick="closeStudentWorks()">✕ Закрыть</button>
                 </div>
                 <div id="worksList"></div>
             </div>
 
             <div class="nav-buttons">
-                <button class="nav-btn-yellow" onclick="showPage('mainPage')">в­ђ Рљ СЂРµР№С‚РёРЅРіР°Рј</button>
+                <button class="nav-btn-yellow" onclick="showPage('mainPage')">⭐ К рейтингам</button>
             </div>
         </div>
 
-        <!-- РЎС‚СЂР°РЅРёС†Р° Р°РґРјРёРЅРєРё -->
+        <!-- Страница админки -->
         <div id="adminPage" class="page">
             <div style="text-align: center; margin-bottom: 20px;">
                 <h2 style="color: #ff4444; text-shadow: 0 0 15px rgba(255, 68, 68, 0.7); font-size: 1.4em;">
-                    вљ™пёЏ РђРґРјРёРЅ-РїР°РЅРµР»СЊ - Р’РІРѕРґ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ РЅРµРґРµР»Рё
+                    ⚙️ Админ-панель - Ввод результатов недели
                 </h2>
             </div>
 
             <div class="admin-section">
                 <div class="admin-input-group">
-                    <label>Р’С‹Р±РµСЂРёС‚Рµ РЅРµРґРµР»СЋ:</label>
+                    <label>Выберите неделю:</label>
                     <input type="week" id="weekSelector" class="week-selector">
                 </div>
 
                 <div class="admin-columns">
-                    <!-- РљРѕР»РѕРЅРєР° Р›СѓС‡С€РёРµ РІ СЃРєРѕСЂРѕСЃС‚Рё -->
+                    <!-- Колонка Лучшие в скорости -->
                     <div class="admin-column">
-                        <h3 class="admin-column-title">рџЏѓ Р›СѓС‡С€РёРµ РІ СЃРєРѕСЂРѕСЃС‚Рё</h3>
+                        <h3 class="admin-column-title">🏃 Лучшие в скорости</h3>
                         <div id="speedRankings"></div>
                     </div>
 
-                    <!-- РљРѕР»РѕРЅРєР° Р›СѓС‡С€РёРµ РІ С‚РѕС‡РЅРѕСЃС‚Рё -->
+                    <!-- Колонка Лучшие в точности -->
                     <div class="admin-column">
-                        <h3 class="admin-column-title">рџЋЇ Р›СѓС‡С€РёРµ РІ С‚РѕС‡РЅРѕСЃС‚Рё</h3>
+                        <h3 class="admin-column-title">🎯 Лучшие в точности</h3>
                         <div id="accuracyRankings"></div>
                     </div>
                 </div>
 
                 <div class="admin-stats">
-                    <div>РС‚РѕРіРѕ РѕС‡РєРѕРІ Р·Р° СЃРєРѕСЂРѕСЃС‚СЊ: <span id="speedTotal">0</span></div>
-                    <div>РС‚РѕРіРѕ РѕС‡РєРѕРІ Р·Р° С‚РѕС‡РЅРѕСЃС‚СЊ: <span id="accuracyTotal">0</span></div>
-                    <div>Р’СЃРµРіРѕ РѕС‡РєРѕРІ Р·Р° РЅРµРґРµР»СЋ: <span id="weekTotal">0</span></div>
+                    <div>Итого очков за скорость: <span id="speedTotal">0</span></div>
+                    <div>Итого очков за точность: <span id="accuracyTotal">0</span></div>
+                    <div>Всего очков за неделю: <span id="weekTotal">0</span></div>
                 </div>
 
                 <div class="admin-buttons">
-                    <button class="admin-save-btn" onclick="saveWeekRankings()">рџ’ѕ РЎРѕС…СЂР°РЅРёС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚С‹</button>
-                    <button class="admin-reset-btn" onclick="clearWeekRankings()">рџ—‘пёЏ РћС‡РёСЃС‚РёС‚СЊ С„РѕСЂРјСѓ</button>
+                    <button class="admin-save-btn" onclick="saveWeekRankings()">💾 Сохранить результаты</button>
+                    <button class="admin-reset-btn" onclick="clearWeekRankings()">🗑️ Очистить форму</button>
                 </div>
             </div>
 
             <div class="nav-buttons">
-                <button class="nav-btn-yellow" onclick="showPage('mainPage')">в†ђ РќР° РіР»Р°РІРЅСѓСЋ</button>
+                <button class="nav-btn-yellow" onclick="showPage('mainPage')">← На главную</button>
             </div>
         </div>
     </div>
 
-    <!-- РњРѕРґР°Р»СЊРЅРѕРµ РѕРєРЅРѕ РґР»СЏ РїРѕР»РЅРѕСЌРєСЂР°РЅРЅРѕРіРѕ РїСЂРѕСЃРјРѕС‚СЂР° -->
+    <!-- Модальное окно для полноэкранного просмотра -->
     <div id="imageModal" class="modal">
         <span class="close" onclick="closeModal()">&times;</span>
         <img class="modal-content" id="fullscreenImage">
     </div>
 
-    <!-- РџРѕРґРєР»СЋС‡Р°РµРј Firebase -->
+    <!-- Подключаем Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
-
