@@ -141,7 +141,7 @@ function createParticipantCard(studentName, isTop3 = false, place = null) {
         </div>
         <div class="avatar-container">
             <img class="avatar" 
-                 src="https://raw.githubusercontent.com/yourname/your-repo/main/avatars/${studentName}.png" 
+                 src="https://raw.githubusercontent.com/In-Error/global-elite-club/main/avatars${studentName}.png" 
                  alt="${studentName}"
                  onerror="this.src='https://via.placeholder.com/100?text=${studentName.charAt(0)}'">
         </div>
