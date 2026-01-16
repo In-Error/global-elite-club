@@ -33,10 +33,10 @@
             </div>
 
             <div class="nav-buttons">
-                <button class="nav-btn-blue" onclick="showPage('worksPage')">📄 Ваши работы</button>
-                <button class="nav-btn-admin" onclick="showPage('adminPage')">⚙️ Админка</button>
-            </div>
-        </div>
+    <button class="nav-btn-blue" onclick="showPage('worksPage')">📄 Ваши работы</button>
+    <button class="nav-btn-green" onclick="showPage('helpPage')">❓ Как объяснить ошибки?</button>
+    <button class="nav-btn-admin" onclick="showPage('adminPage')">⚙️ Админка</button>
+</div>
 
         <!-- Страница просмотра работ -->
         <div id="worksPage" class="page">
@@ -65,6 +65,45 @@
             </div>
         </div>
 
+            <!-- Страница "Как объяснить ошибки?" -->
+<div id="helpPage" class="page">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="color: #00ff00; text-shadow: 0 0 15px rgba(0, 255, 0, 0.7); font-size: 1.4em;">
+            ❓ Как объяснить ошибки?
+        </h2>
+        <p style="color: #aaa; margin-top: 10px;">Справочник для учеников</p>
+    </div>
+
+    <!-- Режим админа (добавление разделов) -->
+    <div class="admin-mode" id="adminMode" style="display: none;">
+        <button class="add-section-btn" onclick="addNewSection()">
+            <span style="font-size: 1.5em;">+</span> Добавить раздел
+        </button>
+        
+        <div id="sectionsList" class="sections-list">
+            <!-- Список разделов будет здесь -->
+        </div>
+        
+        <div id="editorContainer" class="editor-container" style="display: none;">
+            <!-- Редактор будет здесь -->
+        </div>
+    </div>
+
+    <!-- Режим ученика (только просмотр) -->
+    <div class="student-mode" id="studentMode">
+        <div class="help-sections" id="helpSectionsView">
+            <!-- Разделы для просмотра будут здесь -->
+        </div>
+    </div>
+
+    <div class="nav-buttons" style="margin-top: 30px;">
+        <button class="nav-btn-yellow" onclick="showPage('mainPage')">← На главную</button>
+        <button class="nav-btn-admin" onclick="toggleHelpMode()" id="toggleModeBtn">
+            🔧 Режим редактирования
+        </button>
+    </div>
+</div>
+            
         <!-- Страница админки -->
         <div id="adminPage" class="page">
             <div style="text-align: center; margin-bottom: 20px;">
