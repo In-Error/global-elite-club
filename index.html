@@ -1,1284 +1,641 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Ваш Рейтинг</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Arial', sans-serif;
-        }
-
-        body {
-            background: #000;
-            min-height: 100vh;
-            padding: 10px;
-            color: #fff;
-        }
-
-        .container {
-            max-width: 100%;
-            margin: 0 auto;
-            background: #111;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 100, 255, 0.3);
-            overflow: hidden;
-            border: 1px solid #333;
-        }
-
-        header {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            color: white;
-            padding: 20px 15px;
-            text-align: center;
-            border-bottom: 1px solid #333;
-            box-shadow: 0 0 15px rgba(0, 100, 255, 0.4);
-        }
-
-        h1 {
-            font-size: 1.5em;
-            margin-bottom: 8px;
-            text-shadow: 0 0 15px rgba(255, 215, 0, 0.9);
-            color: #ffd700;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .page {
-            display: none;
-            padding: 15px;
-            background: #000;
-        }
-
-        .active {
-            display: block;
-        }
-
-        .rating-section {
-            margin-bottom: 25px;
-            background: #1a1a1a;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
-        }
-
-        .rating-title {
-            font-size: 1.1em;
-            color: #fff;
-            margin-bottom: 15px;
-            text-align: center;
-            font-weight: bold;
-            line-height: 1.3;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-        }
-
-        .student-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .student-item {
-            background: #1a1a1a;
-            padding: 12px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            border: 1px solid #333;
-        }
-
-        /* Подсветка первых трех мест */
-        .student-item.top-three {
-            background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
-            border: 2px solid #ffd700;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
-        }
-
-        .student-item.top-three .student-name {
-            color: #ffd700;
-            text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
-        }
-
-        .student-item.top-three .student-title {
-            color: #ffd700;
-        }
-
-        .student-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-
-        .student-item.top-three:hover {
-            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.6);
-        }
-
-        /* Поле для имени */
-        .name-input-container {
-            min-width: 80px;
-            height: 50px;
-            background: #2d2d2d;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #667eea;
-            border-radius: 8px;
-            cursor: pointer;
-            flex-shrink: 0;
-            transition: all 0.2s ease;
-            padding: 5px;
-            box-shadow: 0 0 8px rgba(102, 126, 234, 0.4);
-        }
-
-        .student-item.top-three .name-input-container {
-            border-color: #ffd700;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-        }
-
-        .name-input-container:hover {
-            background: #667eea;
-            color: white;
-            box-shadow: 0 0 12px rgba(102, 126, 234, 0.7);
-        }
-
-        .student-item.top-three .name-input-container:hover {
-            background: #ffd700;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
-        }
-
-        .name-input-container:focus-within {
-            background: #667eea;
-            color: white;
-            box-shadow: 0 0 15px rgba(102, 126, 234, 0.9);
-        }
-
-        .student-item.top-three .name-input-container:focus-within {
-            background: #ffd700;
-            box-shadow: 0 0 18px rgba(255, 215, 0, 0.9);
-        }
-
-        .name-input {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: transparent;
-            text-align: center;
-            font-size: 0.9em;
-            font-weight: bold;
-            color: #fff;
-            cursor: pointer;
-            border-radius: 6px;
-        }
-
-        .name-input:focus {
-            outline: none;
-            background: #667eea;
-            color: white;
-        }
-
-        .student-item.top-three .name-input:focus {
-            background: #ffd700;
-            color: #000;
-        }
-
-        .name-input::placeholder {
-            color: #888;
-            font-size: 0.8em;
-        }
-
-        .student-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .student-name {
-            font-weight: bold;
-            color: #fff;
-            margin-bottom: 3px;
-            font-size: 0.9em;
-        }
-
-        .student-title {
-            font-size: 0.8em;
-            color: #aaa;
-            line-height: 1.2;
-        }
-
-        /* НОВЫЕ СТИЛИ ДЛЯ ГРИДА УЧЕНИКОВ - ЖЕЛТАЯ ПОДСВЕТКА */
-        .students-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .student-card {
-            background: #1a1a1a;
-            border: 2px solid #ffd700;
-            border-radius: 10px;
-            padding: 20px 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 120px;
-        }
-
-        .student-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.7);
-            border-color: #ffed4a;
-            background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
-        }
-
-        .student-card.active {
-            border-color: #ffed4a;
-            background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
-            box-shadow: 0 0 30px rgba(255, 237, 74, 0.8);
-        }
-
-        .student-card-name {
-            font-weight: bold;
-            color: #ffd700;
-            font-size: 1.1em;
-            margin-bottom: 8px;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
-        }
-
-        .student-card-words {
-            font-size: 0.8em;
-            color: #ffd700;
-            background: rgba(255, 215, 0, 0.1);
-            padding: 3px 8px;
-            border-radius: 12px;
-            margin-top: 5px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-        }
-
-        .student-works-section {
-            display: none;
-            background: #1a1a1a;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            border: 2px solid #333;
-            box-shadow: 0 0 15px rgba(0, 100, 255, 0.2);
-        }
-
-        .student-works-section.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .selected-student-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #333;
-        }
-
-        .selected-student-name {
-            font-weight: bold;
-            color: #0066ff;
-            font-size: 1.3em;
-            text-shadow: 0 0 10px rgba(0, 100, 255, 0.7);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .close-works {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: all 0.2s ease;
-            box-shadow: 0 0 8px rgba(220, 53, 69, 0.5);
-        }
-
-        .close-works:hover {
-            background: #c82333;
-            box-shadow: 0 0 12px rgba(220, 53, 69, 0.7);
-            transform: scale(1.05);
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        .nav-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        /* СТИЛИ ДЛЯ СИНЕЙ КНОПКИ "ВАШИ РАБОТЫ" */
-        .nav-btn-blue {
-            background: #000;
-            color: #0066ff;
-            border: 2px solid #0066ff;
-            padding: 15px 25px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            flex: 1;
-            max-width: 250px;
-            box-shadow: 
-                0 0 20px rgba(0, 100, 255, 0.6),
-                0 5px 15px rgba(0, 0, 0, 0.3);
-            position: relative;
-            overflow: hidden;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .nav-btn-blue:hover {
-            transform: translateY(-3px);
-            box-shadow: 
-                0 0 30px rgba(0, 100, 255, 0.9),
-                0 8px 20px rgba(0, 0, 0, 0.4);
-            background: rgba(0, 100, 255, 0.1);
-        }
-
-        .nav-btn-blue:active {
-            transform: translateY(-1px);
-            box-shadow: 
-                0 0 25px rgba(0, 100, 255, 0.7),
-                0 3px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        /* СТИЛИ ДЛЯ ЖЕЛТОЙ КНОПКИ "К РЕЙТИНГАМ" */
-        .nav-btn-yellow {
-            background: #000;
-            color: #ffd700;
-            border: 2px solid #ffd700;
-            padding: 15px 25px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            flex: 1;
-            max-width: 250px;
-            box-shadow: 
-                0 0 20px rgba(255, 215, 0, 0.6),
-                0 5px 15px rgba(0, 0, 0, 0.3);
-            position: relative;
-            overflow: hidden;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .nav-btn-yellow:hover {
-            transform: translateY(-3px);
-            box-shadow: 
-                0 0 30px rgba(255, 215, 0, 0.9),
-                0 8px 20px rgba(0, 0, 0, 0.4);
-            background: rgba(255, 215, 0, 0.1);
-        }
-
-        .nav-btn-yellow:active {
-            transform: translateY(-1px);
-            box-shadow: 
-                0 0 25px rgba(255, 215, 0, 0.7),
-                0 3px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .date-picker {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .date-input {
-            padding: 8px 12px;
-            border: 2px solid #ffd700;
-            border-radius: 6px;
-            font-size: 0.9em;
-            width: 100%;
-            max-width: 200px;
-            background: #1a1a1a;
-            color: #fff;
-            box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
-        }
-
-        /* СТИЛИ ДЛЯ СИСТЕМЫ СЛОВ */
-        .words-container {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            background: #1a1a1a;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(220, 53, 69, 0.4);
-            border: 2px solid #dc3545;
-            margin-bottom: 20px;
-        }
-
-        /* Счетчик слов - первый элемент */
-        .words-counter {
-            background: #dc3545;
-            color: #fff;
-            padding: 10px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.9em;
-            box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
-            min-width: 80px;
-            text-align: center;
-            flex-shrink: 0;
-        }
-
-        /* Поле со словами и стрелочками - второй элемент */
-        .words-display-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex: 1;
-            justify-content: center;
-        }
-
-        .word-navigation {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .nav-arrow {
-            background: #dc3545;
-            color: #fff;
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9em;
-            font-weight: bold;
-            transition: all 0.2s ease;
-            box-shadow: 0 0 8px rgba(220, 53, 69, 0.5);
-        }
-
-        .nav-arrow:hover {
-            background: #ff6b7a;
-            transform: scale(1.1);
-            box-shadow: 0 0 12px rgba(255, 107, 122, 0.7);
-        }
-
-        .nav-arrow:disabled {
-            background: #555;
-            color: #999;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
-        }
-
-        .current-word-display {
-            padding: 15px 20px;
-            background: #2d2d2d;
-            border-radius: 8px;
-            border: 2px solid #dc3545;
-            font-size: 1em;
-            font-weight: bold;
-            min-width: 180px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            position: relative;
-            color: #fff;
-            box-shadow: 0 0 10px rgba(220, 53, 69, 0.4);
-            min-height: 100px;
-        }
-
-        .word-text {
-            font-size: 1.1em;
-            margin-bottom: 5px;
-        }
-
-        .word-counter {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #dc3545;
-            color: #fff;
-            border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            font-size: 0.75em;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-        }
-
-        /* НОВОЕ РАСПОЛОЖЕНИЕ КНОПКИ УДАЛЕНИЯ - ВНИЗУ ПОСЕРЕДИНЕ */
-        .delete-word-btn {
-            background: #ff4444;
-            color: #fff;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.8em;
-            font-weight: bold;
-            transition: all 0.2s ease;
-            box-shadow: 0 0 8px rgba(255, 68, 68, 0.5);
-            margin-top: 5px;
-        }
-
-        .delete-word-btn:hover {
-            background: #ff0000;
-            transform: scale(1.05);
-            box-shadow: 0 0 12px rgba(255, 0, 0, 0.7);
-        }
-
-        .no-words {
-            color: #aaa;
-            font-style: italic;
-            font-size: 0.9em;
-            text-align: center;
-            width: 100%;
-        }
-
-        /* Поле добавления слова - третий элемент (справа) */
-        .word-input-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-
-        .word-input-label {
-            color: #fff;
-            font-weight: bold;
-            font-size: 0.9em;
-            white-space: nowrap;
-            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-        }
-
-        .word-input {
-            width: 180px;
-            padding: 8px 12px;
-            border: 2px solid #dc3545;
-            border-radius: 6px;
-            font-size: 0.8em;
-            background: #2d2d2d;
-            color: #fff;
-            box-shadow: 0 0 8px rgba(220, 53, 69, 0.3);
-            transition: all 0.2s ease;
-        }
-
-        .word-input:focus {
-            outline: none;
-            border-color: #ff6b7a;
-            box-shadow: 0 0 12px rgba(255, 107, 122, 0.6);
-            background: #333;
-        }
-
-        .word-input::placeholder {
-            color: #888;
-        }
-
-        .works-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .works-row {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        @media (min-width: 480px) {
-            .works-row {
-                flex-direction: row;
-            }
-        }
-
-        .works-category {
-            margin-bottom: 15px;
-        }
-
-        .category-title {
-            font-weight: bold;
-            color: #fff;
-            margin-bottom: 12px;
-            font-size: 1.1em;
-            padding: 5px 0;
-            border-bottom: 2px solid #667eea;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
-        }
-
-        .upload-areas {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            flex: 1;
-        }
-
-        @media (min-width: 480px) {
-            .upload-areas {
-                flex-direction: row;
-            }
-        }
-
-        .upload-area {
-            flex: 1;
-            border: 2px dashed #667eea;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            min-height: 160px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            background: #1a1a1a;
-        }
-
-        /* ЖЕЛТАЯ неоновая подсветка для Основных работ */
-        .works-category:nth-child(1) .upload-area {
-            border-color: #ffd700;
-            box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
-        }
-
-        .works-category:nth-child(1) .upload-area:hover {
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
-        }
-
-        .works-category:nth-child(1) .upload-area.has-work {
-            border-style: solid;
-            border-color: #ffd700;
-            background: rgba(255, 215, 0, 0.05);
-            box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
-        }
-
-        /* ЗЕЛЕНАЯ неоновая подсветка для Проверок */
-        .works-category:nth-child(2) .upload-area {
-            border-color: #00ff00;
-            box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
-        }
-
-        .works-category:nth-child(2) .upload-area:hover {
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
-        }
-
-        .works-category:nth-child(2) .upload-area.has-work {
-            border-style: solid;
-            border-color: #00ff00;
-            background: rgba(0, 255, 0, 0.05);
-            box-shadow: 0 0 12px rgba(0, 255, 0, 0.5);
-        }
-
-        /* ФИОЛЕТОВАЯ неоновая подсветка для Объяснений */
-        .works-category:nth-child(3) .upload-area {
-            border-color: #9d4edd;
-            box-shadow: 0 0 8px rgba(157, 78, 221, 0.3);
-        }
-
-        .works-category:nth-child(3) .upload-area:hover {
-            box-shadow: 0 0 15px rgba(157, 78, 221, 0.6);
-        }
-
-        .works-category:nth-child(3) .upload-area.has-work {
-            border-style: solid;
-            border-color: #9d4edd;
-            background: rgba(157, 78, 221, 0.05);
-            box-shadow: 0 0 12px rgba(157, 78, 221, 0.5);
-        }
-
-        .upload-area:hover {
-            background: #222;
-        }
-
-        .work-preview {
-            max-width: 100%;
-            max-height: 80px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-            margin-bottom: 8px;
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
-        }
-
-        .work-preview:hover {
-            transform: scale(1.03);
-        }
-
-        .upload-text {
-            color: #aaa;
-            font-size: 0.8em;
-            margin-top: 3px;
-        }
-
-        .work-number {
-            font-weight: bold;
-            color: #fff;
-            margin-bottom: 3px;
-            font-size: 0.85em;
-            text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
-        }
-
-        .upload-time {
-            font-size: 0.7em;
-            color: #888;
-            margin-top: 5px;
-            text-align: center;
-            line-height: 1.2;
-        }
-
-        .delete-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.75em;
-            margin-top: 8px;
-            transition: background 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
-        }
-
-        .delete-btn:hover {
-            background: #c82333;
-            box-shadow: 0 0 8px rgba(220, 53, 69, 0.7);
-        }
-
-        /* Кнопка добавления новых работ */
-        .add-work-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.5em;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
-            margin: 10px auto;
-        }
-
-        .add-work-btn:hover {
-            background: #5a6fd8;
-            transform: scale(1.1);
-            box-shadow: 0 0 15px rgba(102, 126, 234, 0.7);
-        }
-
-        .works-category:nth-child(1) .add-work-btn {
-            background: #ffd700;
-            color: #000;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-        }
-
-        .works-category:nth-child(1) .add-work-btn:hover {
-            background: #e6c200;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
-        }
-
-        .works-category:nth-child(2) .add-work-btn {
-            background: #00ff00;
-            color: #000;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
-        }
-
-        .works-category:nth-child(2) .add-work-btn:hover {
-            background: #00e600;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
-        }
-
-        .works-category:nth-child(3) .add-work-btn {
-            background: #9d4edd;
-            color: #fff;
-            box-shadow: 0 0 10px rgba(157, 78, 221, 0.5);
-        }
-
-        .works-category:nth-child(3) .add-work-btn:hover {
-            background: #8a42c6;
-            box-shadow: 0 0 15px rgba(157, 78, 221, 0.7);
-        }
-
-        .additional-works {
-            display: none;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 2px dashed #667eea;
-        }
-
-        .additional-works.active {
-            display: block;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.95);
-            animation: fadeIn 0.3s ease;
-            touch-action: manipulation;
-        }
-
-        .modal-content {
-            display: block;
-            margin: auto;
-            max-width: 95%;
-            max-height: 95%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            border-radius: 8px;
-            box-shadow: 0 0 30px rgba(255,255,255,0.2);
-        }
-
-        .close {
-            position: absolute;
-            top: 15px;
-            right: 25px;
-            color: white;
-            font-size: 30px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: color 0.2s ease;
-            z-index: 1001;
-            text-shadow: 0 0 10px rgba(255,255,255,0.5);
-        }
-
-        .close:hover {
-            color: #667eea;
-            text-shadow: 0 0 15px rgba(102, 126, 234, 0.8);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @media (max-width: 768px) {
-            .students-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-                gap: 10px;
-            }
-            
-            .student-card {
-                padding: 15px 10px;
-                min-height: 100px;
-            }
-            
-            .student-card-name {
-                font-size: 1em;
-            }
-            
-            .words-container {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .word-input {
-                width: 100%;
-            }
-            
-            .current-word-display {
-                min-width: 140px;
-                padding: 12px 15px;
-            }
-            
-            .delete-word-btn {
-                padding: 6px 12px;
-                font-size: 0.75em;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .students-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .current-word-display {
-                min-width: 120px;
-                padding: 10px 12px;
-            }
-        }
-
-        .student-item, .nav-btn-blue, .nav-btn-yellow, .upload-area, .student-card {
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
-
-        .works-list {
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .sync-status {
-            text-align: center;
-            padding: 5px;
-            font-size: 0.8em;
-            color: #00ff00;
-            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
-        }
-
-        .compression-info {
-            text-align: center;
-            padding: 3px;
-            font-size: 0.7em;
-            color: #aaa;
-            background: #2d2d2d;
-            border-radius: 4px;
-            margin-top: 5px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>⭐My Stars⭐ </h1>
-            <div class="sync-status" id="syncStatus">🔄 Синхронизация...</div>
-        </header>
-
-        <!-- Главная страница с рейтингами -->
-        <div id="mainPage" class="page active">
-            <div class="rating-section">
-                <h2 class="rating-title">«Не жди финиша — будь стартом!»</h2>
-                <div class="student-list" id="rating1List"></div>
-            </div>
-
-            <div class="rating-section">
-                <h2 class="rating-title">100% — не мечта. Это твой следующий уровень!</h2>
-                <div class="student-list" id="rating2List"></div>
-            </div>
-
-            <div class="nav-buttons">
-                <button class="nav-btn-blue" onclick="showPage('worksPage')">📄 Ваши работы</button>
-            </div>
-        </div>
-
-        <!-- Страница просмотра работ -->
-        <div id="worksPage" class="page">
-            <div class="date-picker">
-                <input type="date" class="date-input" id="workDate">
-            </div>
-
-            <!-- Заголовок для страницы работ -->
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="color: #0066ff; text-shadow: 0 0 15px rgba(0, 100, 255, 0.7); font-size: 1.4em;">
-                    📄 Ваши Работы
-                </h2>
-            </div>
-
-            <!-- Сетка учеников -->
-            <div class="students-grid" id="studentsGrid"></div>
-
-            <!-- Секция работ выбранного ученика -->
-            <div class="student-works-section" id="studentWorksSection">
-                <div class="selected-student-header">
-                    <div class="selected-student-name" id="selectedStudentName">📄 Ваши Работы</div>
-                    <button class="close-works" onclick="closeStudentWorks()">✕ Закрыть</button>
-                </div>
-                <div id="worksList"></div>
-            </div>
-
-            <div class="nav-buttons">
-                <button class="nav-btn-yellow" onclick="showPage('mainPage')">⭐ К рейтингам</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модальное окно для полноэкранного просмотра -->
-    <div id="imageModal" class="modal">
-        <span class="close" onclick="closeModal()">&times;</span>
-        <img class="modal-content" id="fullscreenImage">
-    </div>
-
-    <!-- Подключаем Firebase (ТОЛЬКО Firestore) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-    <script>
-        // === КОНФИГУРАЦИЯ FIREBASE (БЕЗ STORAGE) ===
-        const firebaseConfig = {
-            apiKey: "AIzaSyA1gMGXixXqfgptc0-Nx5fRWCbS2lefXLY",
-            authDomain: "global-elite-club-dcd0d.firebaseapp.com",
-            projectId: "global-elite-club-dcd0d",
-            storageBucket: "global-elite-club-dcd0d.firebasestorage.app",
-            messagingSenderId: "372974979606",
-            appId: "1:372974979606:web:c29e3a0e724ca07abc4337",
-            measurementId: "G-EBEWY8W5Y7"
+// === КОНФИГУРАЦИЯ FIREBASE ===
+const firebaseConfig = {
+    apiKey: "AIzaSyA1gMGXixXqfgptc0-Nx5fRWCbS2lefXLY",
+    authDomain: "global-elite-club-dcd0d.firebaseapp.com",
+    projectId: "global-elite-club-dcd0d",
+    storageBucket: "global-elite-club-dcd0d.firebasestorage.app",
+    messagingSenderId: "372974979606",
+    appId: "1:372974979606:web:c29e3a0e724ca07abc4337",
+    measurementId: "G-EBEWY8W5Y7"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Данные студентов
+const students = [
+    "Alina", "Artem", "Dania", "Denis", "Lera", "Nastia Che",
+    "Nastia S", "Natasha", "Rita", "Selin", "Vika"
+];
+
+// Хранилища
+let studentWords = {};
+let studentWorks = {};
+let studentNames = {};
+let additionalWorks = {};
+let explanationsWorks = {};
+let currentSelectedStudent = null;
+let additionalExplanations = {};
+
+// === НОВАЯ ЛОГИКА ПОДСЧЁТА ОЧКОВ ===
+
+function getPointsByPlace(place) {
+    if (place >= 1 && place <= 11) return 12 - place;
+    return 0;
+}
+
+function calculateStudentStats() {
+    const stats = {};
+
+    students.forEach(name => {
+        stats[name] = {
+            name: name,
+            totalPoints: 0,
+            places: [],
+            participations: 0,
+            weeksParticipated: new Set()
         };
+    });
 
-        // Инициализируем Firebase (только Firestore)
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        // Данные для рейтингов
-        const rating1Titles = [
-            "Гепард Скорости", "Турбо-сокол", "Быстрая лиса", "Енот-шустрик", 
-            "Шустрый зайчик", "Шустрая белочка", "Неутомимый Муравей", 
-            "Ёжик-быстроножик", "Трудяга-бобр", "Проворная выдра", "Смелая черепашка"
-        ];
-
-        const rating2Titles = [
-            "Орел точности", "Пантера-точность", "Мудрая сова", "Лиса-точность", 
-            "Дельфин смысла", "Умный котик", "Аккуратная косуля", 
-            "Внимательный медвежонок", "Пингвин ясности", "Аккуратный кролик", "Потенциальная звезда"
-        ];
-
-        const students = [
-            "Alina", "Artem", "Dania", "Denis", "Lera", "Nastia Che", 
-            "Nastia S", "Natasha", "Rita", "Selin", "Vika"
-        ];
-
-        // Хранилища для данных
-        let studentWords = {};
-        let studentWorks = {};
-        let studentNames = {};
-        let additionalWorks = {};
-        let explanationsWorks = {}; // Новое хранилище для объяснений
-        let currentSelectedStudent = null;
-
-        // Функция обновления статуса синхронизации
-        function updateSyncStatus(message, isSuccess = true) {
-            const statusElement = document.getElementById('syncStatus');
-            statusElement.textContent = message;
-            statusElement.style.color = isSuccess ? '#00ff00' : '#ff4444';
-            statusElement.style.textShadow = isSuccess ? '0 0 5px rgba(0, 255, 0, 0.7)' : '0 0 5px rgba(255, 68, 68, 0.7)';
+    // Обработка rating1
+    for (let i = 1; i <= 11; i++) {
+        const key = `rating1_${i}`;
+        const name = (studentNames[key] || '').trim();
+        if (name && stats[name]) {
+            stats[name].totalPoints += getPointsByPlace(i);
+            stats[name].places.push(i);
+            stats[name].participations++;
+            stats[name].weeksParticipated.add('rating1');
         }
+    }
 
-        // === ФУНКЦИЯ СЖАТИЯ ИЗОБРАЖЕНИЙ ===
-        function compressImage(file, maxWidth = 1200, quality = 0.8) {
-            return new Promise((resolve, reject) => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
-                
-                img.onload = function() {
-                    // Рассчитываем новые размеры сохраняя пропорции
-                    let width = img.width;
-                    let height = img.height;
-                    
-                    if (width > maxWidth) {
-                        height = Math.round((height * maxWidth) / width);
-                        width = maxWidth;
+    // Обработка rating2
+    for (let i = 1; i <= 11; i++) {
+        const key = `rating2_${i}`;
+        const name = (studentNames[key] || '').trim();
+        if (name && stats[name]) {
+            stats[name].totalPoints += getPointsByPlace(i);
+            stats[name].places.push(i);
+            stats[name].participations++;
+            stats[name].weeksParticipated.add('rating2');
+        }
+    }
+
+    Object.values(stats).forEach(s => {
+        if (s.places.length > 0) {
+            s.avgPlace = (s.places.reduce((a,b)=>a+b,0) / s.places.length).toFixed(2);
+        } else {
+            s.avgPlace = '—';
+        }
+        s.weeksCount = s.weeksParticipated.size;
+    });
+
+    return Object.values(stats);
+}
+
+function sortStudents(studentsData) {
+    return studentsData.sort((a, b) => {
+        if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+        if (a.avgPlace === '—') return 1;
+        if (b.avgPlace === '—') return -1;
+        return parseFloat(a.avgPlace) - parseFloat(b.avgPlace);
+    });
+}
+
+// === ФУНКЦИЯ ПОЛУЧЕНИЯ КОЛИЧЕСТВА ВЫПОЛНЕННЫХ ЗАДАНИЙ ===
+
+function getCompletedTasks(studentName) {
+    let count = 0;
+    // Основные работы
+    for (let i = 1; i <= 3; i++) {
+        const workKey = `${studentName}_work${i}`;
+        if (studentWorks[workKey] && studentWorks[workKey].image) {
+            count++;
+        }
+    }
+    // Проверки
+    for (let i = 1; i <= 3; i++) {
+        const checkKey = `${studentName}_check${i}`;
+        if (studentWorks[checkKey] && studentWorks[checkKey].image) {
+            count++;
+        }
+    }
+    // Дополнительные работы
+    const additionalWorkList = additionalWorks[studentName] || [];
+    count += additionalWorkList.filter(w => w.type === 'work').length;
+    count += additionalWorkList.filter(w => w.type === 'check').length;
+
+    return count;
+}
+
+// === ФУНКЦИЯ СОЗДАНИЯ КАРТОЧКИ УЧАСТНИКА ===
+
+function createParticipantCard(studentName, isTop3 = false, place = null) {
+    const completedTasks = getCompletedTasks(studentName);
+    const card = document.createElement('div');
+    card.className = `participant-card ${isTop3 ? 'top-three' : ''}`;
+    
+    // Определяем количество звёзд
+    let starsCount = 1;
+    if (place === 1) starsCount = 5;
+    else if (place === 2) starsCount = 4;
+    else if (place === 3) starsCount = 3;
+    
+    let starsHtml = '';
+    for (let i = 0; i < starsCount; i++) {
+        starsHtml += '<div class="star">⭐</div>';
+    }
+    
+    card.innerHTML = `
+        <div class="stars-container">
+            ${starsHtml}
+        </div>
+        <div class="avatar-container">
+            <img class="avatar" 
+                 src="https://raw.githubusercontent.com/yourname/your-repo/main/avatars/${studentName}.png" 
+                 alt="${studentName}"
+                 onerror="this.src='https://via.placeholder.com/100?text=${studentName.charAt(0)}'">
+        </div>
+        <div class="name">${studentName}</div>
+        <div class="tasks">Выполнено заданий: <span>${completedTasks}</span></div>
+    `;
+    card.onclick = () => {
+        alert(`Вы выбрали участника: ${studentName}\nВыполнено заданий: ${completedTasks}`);
+    };
+    return card;
+}
+
+// === ФУНКЦИЯ ОБНОВЛЕНИЯ РЕЙТИНГА ===
+
+function updateRatings() {
+    const stats = calculateStudentStats();
+    const sorted = sortStudents(stats);
+
+    const top3Container = document.getElementById('top3Container');
+    const allParticipantsGrid = document.getElementById('allParticipantsGrid');
+
+    top3Container.innerHTML = '';
+    allParticipantsGrid.innerHTML = '';
+
+    // Заполняем ТОП-3
+    for (let i = 0; i < Math.min(3, sorted.length); i++) {
+        const student = sorted[i];
+        const place = i + 1;
+        const card = createParticipantCard(student.name, true, place);
+        top3Container.appendChild(card);
+    }
+
+    // Заполняем сетку всех участников
+    sorted.forEach(student => {
+        const card = createParticipantCard(student.name);
+        allParticipantsGrid.appendChild(card);
+    });
+}
+
+// === ФУНКЦИЯ ПОИСКА ===
+
+function filterParticipants() {
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    const allCards = document.querySelectorAll('.participant-card');
+
+    allCards.forEach(card => {
+        const studentName = card.querySelector('.name').textContent.toLowerCase();
+        if (studentName.includes(query)) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// === ОСТАЛЬНАЯ ЛОГИКА ===
+
+function updateSyncStatus(message, isSuccess = true) {
+    const statusElement = document.getElementById('syncStatus');
+    statusElement.textContent = message;
+    statusElement.style.color = isSuccess ? '#00ff00' : '#ff4444';
+    statusElement.style.textShadow = isSuccess ? '0 0 5px rgba(0, 255, 0, 0.7)' : '0 0 5px rgba(255, 68, 68, 0.7)';
+}
+
+async function loadAllData() {
+    try {
+        updateSyncStatus('🔄 Загрузка данных...');
+        const wordsSnapshot = await db.collection('words').get();
+        studentWords = {};
+        wordsSnapshot.forEach(doc => {
+            studentWords[doc.id] = doc.data().words || [];
+        });
+        const worksSnapshot = await db.collection('works').get();
+        studentWorks = {};
+        worksSnapshot.forEach(doc => {
+            studentWorks[doc.id] = doc.data();
+        });
+        const namesSnapshot = await db.collection('ratingNames').get();
+        studentNames = {};
+        namesSnapshot.forEach(doc => {
+            studentNames[doc.id] = doc.data().name;
+        });
+        const additionalSnapshot = await db.collection('additionalWorks').get();
+        additionalWorks = {};
+        additionalSnapshot.forEach(doc => {
+            additionalWorks[doc.id] = doc.data().works || [];
+        });
+        const explanationsSnapshot = await db.collection('explanations').get();
+        explanationsWorks = {};
+        explanationsSnapshot.forEach(doc => {
+            explanationsWorks[doc.id] = doc.data();
+        });
+        await loadAdditionalExplanations();
+        updateSyncStatus('✅ Данные загружены');
+        updateRatings();
+    } catch (error) {
+        console.error('Ошибка загрузки данных:', error);
+        updateSyncStatus('❌ Ошибка загрузки', false);
+        studentWords = JSON.parse(localStorage.getItem('studentWords')) || {};
+        studentWorks = JSON.parse(localStorage.getItem('studentWorks')) || {};
+        studentNames = JSON.parse(localStorage.getItem('studentNames')) || {};
+        additionalWorks = JSON.parse(localStorage.getItem('additionalWorks')) || {};
+        explanationsWorks = JSON.parse(localStorage.getItem('explanationsWorks')) || {};
+        updateRatings();
+    }
+}
+
+function initializeStudentsGrid() {
+    const studentsGrid = document.getElementById('studentsGrid');
+    studentsGrid.innerHTML = '';
+    students.forEach(student => {
+        const words = studentWords[student] || [];
+        const card = document.createElement('div');
+        card.className = `student-card ${currentSelectedStudent === student ? 'active' : ''}`;
+        card.innerHTML = `
+            <div class="student-card-name">${student}</div>
+            <div class="student-card-words">${words.length} words</div>
+        `;
+        card.onclick = () => openStudentWorks(student);
+        studentsGrid.appendChild(card);
+    });
+}
+
+function openStudentWorks(student) {
+    currentSelectedStudent = student;
+    initializeStudentsGrid();
+    initializeStudentWorks(student);
+    const section = document.getElementById('studentWorksSection');
+    section.classList.add('active');
+    document.getElementById('selectedStudentName').textContent = student;
+    section.scrollIntoView({ behavior: 'smooth' });
+}
+
+function closeStudentWorks() {
+    currentSelectedStudent = null;
+    const section = document.getElementById('studentWorksSection');
+    section.classList.remove('active');
+    initializeStudentsGrid();
+    document.getElementById('selectedStudentName').textContent = "📄 Ваши Работы";
+}
+
+function initializeStudentWorks(student) {
+    const worksList = document.getElementById('worksList');
+    worksList.innerHTML = '';
+    const workItem = document.createElement('div');
+    workItem.className = 'work-item';
+    workItem.innerHTML = `
+        <div class="words-container">
+            ${createWordsSection(student)}
+        </div>
+        <div class="works-container">
+            <div class="works-category">
+                <div class="category-title">Основные работы</div>
+                <div class="works-row">
+                    <div class="upload-areas">
+                        ${createWorkArea(student, 'work1')}
+                        ${createWorkArea(student, 'work2')}
+                        ${createWorkArea(student, 'work3')}
+                    </div>
+                </div>
+                <button class="add-work-btn" onclick="toggleAdditionalWorks('${student}', 'work')">+</button>
+                <div class="additional-works" id="additionalWorks_${student}_work">
+                    ${createAdditionalWorks(student, 'work')}
+                </div>
+            </div>
+            <div class="works-category">
+                <div class="category-title">Проверки</div>
+                <div class="works-row">
+                    <div class="upload-areas">
+                        ${createWorkArea(student, 'check1')}
+                        ${createWorkArea(student, 'check2')}
+                        ${createWorkArea(student, 'check3')}
+                    </div>
+                </div>
+                <button class="add-work-btn" onclick="toggleAdditionalWorks('${student}', 'check')">+</button>
+                <div class="additional-works" id="additionalWorks_${student}_check">
+                    ${createAdditionalWorks(student, 'check')}
+                </div>
+            </div>
+            <div class="works-category">
+                <div class="category-title">Ваши объяснения</div>
+                <div class="works-row">
+                    <div class="upload-areas">
+                        ${createExplanationArea(student, 'explain1')}
+                    </div>
+                </div>
+                <button class="add-work-btn" onclick="toggleAdditionalExplanations('${student}')">+</button>
+                <div class="additional-works" id="additionalExplanations_${student}">
+                    ${createAdditionalExplanations(student)}
+                </div>
+            </div>
+        </div>
+    `;
+    worksList.appendChild(workItem);
+}
+
+function createWordsSection(student) {
+    const words = studentWords[student] || [];
+    const hasWords = words.length > 0;
+    const currentIndex = currentWordIndexes[student] || 0;
+    return `
+        <div class="words-counter">
+            ${words.length} words
+        </div>
+        <div class="words-display-container">
+            <div class="word-navigation">
+                <button class="nav-arrow" onclick="navigateWord('${student}', -1)" ${words.length <= 1 ? 'disabled' : ''}>◀</button>
+                <div class="current-word-display">
+                    ${hasWords ?
+                    `<div class="word-text">${words[currentIndex]}</div>
+                     <button class="delete-word-btn" onclick="removeCurrentWord('${student}')" title="Удалить слово">🗑️ Удалить</button>
+                     <div class="word-counter">${currentIndex + 1}</div>`
+                    : '<div class="no-words">No words added</div>'
                     }
-                    
-                    canvas.width = width;
-                    canvas.height = height;
-                    
-                    // Рисуем сжатое изображение
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Конвертируем в JPEG с качеством
-                    try {
-                        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-                        
-                        // Вычисляем размер после сжатия
-                        const base64Size = Math.round((compressedBase64.length * 3) / 4);
-                        console.log(`Сжатие: ${(file.size/1024/1024).toFixed(1)}MB → ${(base64Size/1024/1024).toFixed(1)}MB (${Math.round((base64Size/file.size)*100)}%)`);
-                        
-                        resolve({
-                            data: compressedBase64,
-                            originalSize: file.size,
-                            compressedSize: base64Size,
-                            width: width,
-                            height: height
-                        });
-                    } catch (error) {
-                        reject(new Error('Ошибка сжатия изображения'));
-                    }
-                };
-                
-                img.onerror = function() {
-                    reject(new Error('Ошибка загрузки изображения'));
-                };
-                
-                img.src = URL.createObjectURL(file);
+                </div>
+                <button class="nav-arrow" onclick="navigateWord('${student}', 1)" ${words.length <= 1 ? 'disabled' : ''}>▶</button>
+            </div>
+        </div>
+        <div class="word-input-container">
+            <input
+                type="text"
+                class="word-input"
+                id="wordInput_${student}"
+                placeholder="Add word"
+                onkeypress="handleWordInput(event, '${student}')"
+            >
+        </div>
+    `;
+}
+
+function handleWordInput(event, student) {
+    if (event.key === 'Enter') {
+        const input = event.target;
+        const word = input.value.trim();
+        if (word) {
+            addNewWord(student, word).then(() => {
+                input.value = '';
+                setTimeout(() => input.focus(), 0);
             });
         }
+        event.preventDefault();
+    }
+}
 
-        // Загрузка данных из Firebase
-        async function loadAllData() {
-            try {
-                updateSyncStatus('🔄 Загрузка данных...');
-                
-                // Загружаем слова
-                const wordsSnapshot = await db.collection('words').get();
-                studentWords = {};
-                wordsSnapshot.forEach(doc => {
-                    studentWords[doc.id] = doc.data().words || [];
-                });
-                
-                // Загружаем основные работы
-                const worksSnapshot = await db.collection('works').get();
-                studentWorks = {};
-                worksSnapshot.forEach(doc => {
-                    studentWorks[doc.id] = doc.data();
-                });
-
-                // Загружаем имена для рейтингов
-                const namesSnapshot = await db.collection('ratingNames').get();
-                studentNames = {};
-                namesSnapshot.forEach(doc => {
-                    studentNames[doc.id] = doc.data().name;
-                });
-
-                // Загружаем дополнительные работы
-                const additionalSnapshot = await db.collection('additionalWorks').get();
-                additionalWorks = {};
-                additionalSnapshot.forEach(doc => {
-                    additionalWorks[doc.id] = doc.data().works || [];
-                });
-
-                // Загружаем объяснения (НОВАЯ КОЛЛЕКЦИЯ)
-                const explanationsSnapshot = await db.collection('explanations').get();
-                explanationsWorks = {};
-                explanationsSnapshot.forEach(doc => {
-                    explanationsWorks[doc.id] = doc.data();
-                });
-                
-                updateSyncStatus('✅ Данные загружены');
-                
-            } catch (error) {
-                console.error('Ошибка загрузки данных:', error);
-                updateSyncStatus('❌ Ошибка загрузки', false);
-                
-                // Fallback на localStorage
-                studentWords = JSON.parse(localStorage.getItem('studentWords')) || {};
-                studentWorks = JSON.parse(localStorage.getItem('studentWorks')) || {};
-                studentNames = JSON.parse(localStorage.getItem('studentNames')) || {};
-                additionalWorks = JSON.parse(localStorage.getItem('additionalWorks')) || {};
-                explanationsWorks = JSON.parse(localStorage.getItem('explanationsWorks')) || {};
-            }
+let currentWordIndexes = {};
+function navigateWord(student, direction) {
+    const words = studentWords[student] || [];
+    if (words.length === 0) return;
+    if (!currentWordIndexes.hasOwnProperty(student)) {
+        currentWordIndexes[student] = 0;
+    }
+    let newIndex = currentWordIndexes[student] + direction;
+    if (newIndex < 0) newIndex = words.length - 1;
+    if (newIndex >= words.length) newIndex = 0;
+    currentWordIndexes[student] = newIndex;
+    const displayElement = document.querySelector(`[onkeypress="handleWordInput(event, '${student}')"]`)
+        ?.closest('.words-container')
+        ?.querySelector('.current-word-display');
+    if (displayElement) {
+        displayElement.innerHTML = `
+            <div class="word-text">${words[newIndex]}</div>
+            <button class="delete-word-btn" onclick="removeCurrentWord('${student}')" title="Удалить слово">🗑️ Удалить</button>
+            <div class="word-counter">${newIndex + 1}</div>
+        `;
+        const prevButton = displayElement.parentElement.querySelector('.nav-arrow:first-child');
+        const nextButton = displayElement.parentElement.querySelector('.nav-arrow:last-child');
+        if (words.length <= 1) {
+            prevButton.disabled = true;
+            nextButton.disabled = true;
+        } else {
+            prevButton.disabled = false;
+            nextButton.disabled = false;
         }
-
-        // Сохранение слов
-        async function saveWords(studentName, wordsArray) {
-            try {
-                await db.collection('words').doc(studentName).set({
-                    words: wordsArray,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                studentWords[studentName] = wordsArray;
-                updateSyncStatus('✅ Слова сохранены');
-            } catch (error) {
-                console.error('Ошибка сохранения слов:', error);
-                updateSyncStatus('❌ Ошибка сохранения', false);
-                
-                // Fallback
-                studentWords[studentName] = wordsArray;
-                localStorage.setItem('studentWords', JSON.stringify(studentWords));
-            }
+        const counterElement = displayElement.closest('.words-container').querySelector('.words-counter');
+        if (counterElement) {
+            counterElement.textContent = `${words.length} words`;
         }
+    }
+}
 
-        // Сохранение дополнительных работ
-        async function saveAdditionalWorks(studentName, worksArray) {
-            try {
-                await db.collection('additionalWorks').doc(studentName).set({
-                    works: worksArray,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                additionalWorks[studentName] = worksArray;
-                updateSyncStatus('✅ Доп. работы сохранены');
-            } catch (error) {
-                console.error('Ошибка сохранения доп. работ:', error);
-                updateSyncStatus('❌ Ошибка сохранения', false);
-                
-                // Fallback
-                additionalWorks[studentName] = worksArray;
-                localStorage.setItem('additionalWorks', JSON.stringify(additionalWorks));
-            }
+function toggleAdditionalWorks(student, workType) {
+    const element = document.getElementById(`additionalWorks_${student}_${workType}`);
+    element.classList.toggle('active');
+    const works = additionalWorks[student] || [];
+    const hasWorksOfType = works.filter(w => w.type === workType).length > 0;
+    if (!hasWorksOfType && element.classList.contains('active')) {
+        addAdditionalWork(student, workType);
+    }
+}
+
+function toggleAdditionalExplanations(student) {
+    const element = document.getElementById(`additionalExplanations_${student}`);
+    element.classList.toggle('active');
+    const explanations = additionalExplanations[student] || [];
+    if (explanations.length === 0 && element.classList.contains('active')) {
+        addAdditionalExplanation(student);
+    }
+}
+
+function createAdditionalWorks(student, workType) {
+    const works = additionalWorks[student] || [];
+    const filteredWorks = works.filter(w => w.type === workType);
+    if (filteredWorks.length === 0) {
+        return '<div style="text-align: center; color: #aaa; padding: 10px;">Нет дополнительных работ</div>';
+    }
+    return `
+        <div class="works-row">
+            <div class="upload-areas">
+                ${filteredWorks.map(work => createWorkArea(student, `${workType}${work.number}`)).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function createAdditionalExplanations(student) {
+    const explanations = additionalExplanations[student] || [];
+    if (explanations.length === 0) {
+        return '<div style="text-align: center; color: #aaa; padding: 10px;">Нет дополнительных объяснений</div>';
+    }
+    return `
+        <div class="works-row">
+            <div class="upload-areas">
+                ${explanations.map(expl => createExplanationArea(student, `explain${expl.number}`)).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function createWorkArea(student, workType) {
+    const workKey = `${student}_${workType}`;
+    const workData = studentWorks[workKey];
+    if (workData && workData.image) {
+        const compressionInfo = workData.compressionInfo ? `<div class="compression-info">${workData.compressionInfo}</div>` : '';
+        return `
+            <div class="upload-area has-work">
+                <img src="${workData.image}" class="work-preview" alt="${workType}" onclick="openFullscreen('${workData.image}')">
+                <div class="work-number">${getWorkTitle(workType)}</div>
+                ${compressionInfo}
+                <div class="upload-time">${formatDateTime(workData.timestamp)}</div>
+                <button class="delete-btn" onclick="deleteWork('${student}', '${workType}', false)">🗑️ Удалить</button>
+                <input type="file" class="file-input" accept="image/*" onchange="handleWorkUpload(this, '${student}', '${workType}', false)">
+            </div>
+        `;
+    } else {
+        return `
+            <div class="upload-area" onclick="triggerWorkUpload(this, '${student}', '${workType}', false)">
+                <div class="work-number">${getWorkTitle(workType)}</div>
+                <div class="upload-text">Нажмите для загрузки</div>
+                <div class="compression-info">Поддерживаются файлы до 10MB</div>
+                <input type="file" class="file-input" accept="image/*" onchange="handleWorkUpload(this, '${student}', '${workType}', false)">
+            </div>
+        `;
+    }
+}
+
+function createExplanationArea(student, workType) {
+    const workKey = `${student}_${workType}`;
+    const workData = explanationsWorks[workKey];
+    if (workData && workData.image) {
+        const compressionInfo = workData.compressionInfo ? `<div class="compression-info">${workData.compressionInfo}</div>` : '';
+        return `
+            <div class="upload-area has-work">
+                <img src="${workData.image}" class="work-preview" alt="${workType}" onclick="openFullscreen('${workData.image}')">
+                <div class="work-number">${getExplanationTitle(workType)}</div>
+                ${compressionInfo}
+                <div class="upload-time">${formatDateTime(workData.timestamp)}</div>
+                <button class="delete-btn" onclick="deleteWork('${student}', '${workType}', true)">🗑️ Удалить</button>
+                <input type="file" class="file-input" accept="image/*" onchange="handleWorkUpload(this, '${student}', '${workType}', true)">
+            </div>
+        `;
+    } else {
+        return `
+            <div class="upload-area" onclick="triggerExplanationUpload(this, '${student}', '${workType}')">
+                <div class="work-number">${getExplanationTitle(workType)}</div>
+                <div class="upload-text">Нажмите для загрузки</div>
+                <div class="compression-info">Поддерживаются файлы до 10MB</div>
+                <input type="file" class="file-input" accept="image/*" onchange="handleWorkUpload(this, '${student}', '${workType}', true)">
+            </div>
+        `;
+    }
+}
+
+function triggerWorkUpload(areaElement, student, workType, isExplanation = false) {
+    const fileInput = areaElement.querySelector('.file-input');
+    fileInput.click();
+}
+
+function triggerExplanationUpload(areaElement, student, workType) {
+    const fileInput = areaElement.querySelector('.file-input');
+    fileInput.click();
+}
+
+function formatDateTime(timestamp) {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `Загружено: ${day}.${month}.${year} ${hours}:${minutes}`;
+}
+
+function getWorkTitle(workType) {
+    if (workType.startsWith('work') && workType.length > 4) {
+        const num = workType.substring(4);
+        return `Работа ${num}`;
+    }
+    if (workType.startsWith('check') && workType.length > 5) {
+        const num = workType.substring(5);
+        return `Проверка ${num}`;
+    }
+    const titles = {
+        'work1': 'Работа 1', 'work2': 'Работа 2', 'work3': 'Работа 3',
+        'check1': 'Проверка 1', 'check2': 'Проверка 2', 'check3': 'Проверка 3'
+    };
+    return titles[workType] || workType;
+}
+
+function getExplanationTitle(workType) {
+    if (workType.startsWith('explain') && workType.length > 7) {
+        const num = workType.substring(7);
+        return `Объяснение ${num}`;
+    }
+    return 'Объяснение 1';
+}
+
+function openFullscreen(imageSrc) {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('fullscreenImage');
+    modal.style.display = 'block';
+    modalImg.src = imageSrc;
+    modal.onclick = function(event) {
+        if (event.target === modal) {
+            closeModal();
         }
-
-        // Сохранение объяснений (НОВАЯ ФУНКЦИЯ)
-        async function saveExplanation(student, workType, imageBase64, compressionInfo = '') {
-            const workKey = `${student}_${workType}`;
-            try {
-                await db.collection('explanations').doc(workKey).set({
-                    image: imageBase64,
-                    student: student,
-                    workType: workType,
-                    compressionInfo: compressionInfo,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                explanationsWorks[workKey] = {
-                    image: imageBase64,
-                    compressionInfo: compressionInfo,
-                    timestamp: new Date().toISOString()
-                };
-                updateSyncStatus('✅ Объяснение сохранено');
-            } catch (error) {
-                console.error('Ошибка сохранения объяснения:', error);
-                updateSyncStatus('❌ Ошибка сохранения', false);
-                
-                // Fallback
-                explanationsWorks[workKey] = {
-                    image: imageBase64,
-                    compressionInfo: compressionInfo,
-                    timestamp: new Date().toISOString()
-                };
-                localStorage.setItem('explanationsWorks', JSON.stringify(explanationsWorks));
-            }
+    };
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal();
         }
+    });
+}
 
-        // Добавление нового слова
-        async function addNewWord(studentName, word) {
-            const words = studentWords[studentName] || [];
-            if (word.trim() && !words.includes(word.trim())) {
-                words.push(word.trim());
+function closeModal() {
+    document.getElementById('imageModal').style.display = 'none';
+}
+
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    document.getElementById(pageId).classList.add('active');
+    window.scrollTo(0, 0);
+    if (pageId === 'worksPage') {
+        closeStudentWorks();
+    }
+}
+
+async function saveWords(studentName, wordsArray) {
+    try {
+        await db.collection('words').doc(studentName).set({
+            words: wordsArray,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        studentWords[studentName] = wordsArray;
+        updateSyncStatus('✅ Слова сохранены');
+    } catch (error) {
+        console.error('Ошибка сохранения слов:', error);
+        updateSyncStatus('❌ Ошибка сохранения', false);
+        studentWords[studentName] = wordsArray;
+        localStorage.setItem('studentWords', JSON.stringify(studentWords));
+    }
+}
+
+async function addNewWord(studentName, word) {
+    const words = studentWords[studentName] || [];
+    if (word.trim() && !words.includes(word.trim())) {
+        words.push(word.trim());
+        await saveWords(studentName, words);
+        if (currentSelectedStudent === studentName) {
+            initializeStudentWorks(studentName);
+        }
+        initializeStudentsGrid();
+    }
+}
+
+async function removeCurrentWord(studentName) {
+    const words = studentWords[studentName] || [];
+    if (words.length > 0) {
+        const currentIndex = currentWordIndexes[studentName] || 0;
+        if (currentIndex >= 0 && currentIndex < words.length) {
+            if (confirm(`Удалить слово "${words[currentIndex]}"?`)) {
+                words.splice(currentIndex, 1);
                 await saveWords(studentName, words);
                 if (currentSelectedStudent === studentName) {
                     initializeStudentWorks(studentName);
@@ -1286,754 +643,235 @@
                 initializeStudentsGrid();
             }
         }
+    }
+}
 
-        // Удаление текущего слова
-        async function removeCurrentWord(studentName) {
-            const words = studentWords[studentName] || [];
-            if (words.length > 0) {
-                const currentIndex = currentWordIndexes[studentName] || 0;
-                if (currentIndex >= 0 && currentIndex < words.length) {
-                    if (confirm(`Удалить слово "${words[currentIndex]}"?`)) {
-                        words.splice(currentIndex, 1);
-                        await saveWords(studentName, words);
-                        if (currentSelectedStudent === studentName) {
-                            initializeStudentWorks(studentName);
-                        }
-                        initializeStudentsGrid();
-                    }
-                }
+async function saveAdditionalWorks(studentName, worksArray) {
+    try {
+        await db.collection('additionalWorks').doc(studentName).set({
+            works: worksArray,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        additionalWorks[studentName] = worksArray;
+        updateSyncStatus('✅ Доп. работы сохранены');
+    } catch (error) {
+        console.error('Ошибка сохранения доп. работ:', error);
+        updateSyncStatus('❌ Ошибка сохранения', false);
+        additionalWorks[studentName] = worksArray;
+        localStorage.setItem('additionalWorks', JSON.stringify(additionalWorks));
+    }
+}
+
+async function addAdditionalWork(studentName, workType) {
+    const works = additionalWorks[studentName] || [];
+    const newWorkNumber = works.length + 4;
+    works.push({
+        type: workType,
+        number: newWorkNumber,
+        name: `${workType === 'work' ? 'Работа' : 'Проверка'} ${newWorkNumber}`
+    });
+    await saveAdditionalWorks(studentName, works);
+    if (currentSelectedStudent === studentName) {
+        initializeStudentWorks(studentName);
+    }
+}
+
+async function saveExplanation(student, workType, imageBase64, compressionInfo = '') {
+    const workKey = `${student}_${workType}`;
+    try {
+        await db.collection('explanations').doc(workKey).set({
+            image: imageBase64,
+            student: student,
+            workType: workType,
+            compressionInfo: compressionInfo,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        explanationsWorks[workKey] = {
+            image: imageBase64,
+            compressionInfo: compressionInfo,
+            timestamp: new Date().toISOString()
+        };
+        updateSyncStatus('✅ Объяснение сохранено');
+    } catch (error) {
+        console.error('Ошибка сохранения объяснения:', error);
+        updateSyncStatus('❌ Ошибка сохранения', false);
+        explanationsWorks[workKey] = {
+            image: imageBase64,
+            compressionInfo: compressionInfo,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('explanationsWorks', JSON.stringify(explanationsWorks));
+    }
+}
+
+async function handleWorkUpload(input, student, workType, isExplanation = false) {
+    const file = input.files[0];
+    if (file && file.type.startsWith('image/')) {
+        try {
+            updateSyncStatus('🔄 Проверка изображения...');
+            if (file.size > 10 * 1024 * 1024) {
+                throw new Error('Файл слишком большой. Максимум 10MB');
             }
-        }
-
-        // Добавление новой дополнительной работы
-        async function addAdditionalWork(studentName, workType) {
-            const works = additionalWorks[studentName] || [];
-            const newWorkNumber = works.length + 4; // Продолжаем с 4, 5, 6...
-            works.push({
-                type: workType,
-                number: newWorkNumber,
-                name: `${workType === 'work' ? 'Работа' : 'Проверка'} ${newWorkNumber}`
-            });
-            await saveAdditionalWorks(studentName, works);
-            if (currentSelectedStudent === studentName) {
-                initializeStudentWorks(studentName);
+            updateSyncStatus('🔄 Сжатие изображения...');
+            let compressionResult = await compressImage(file, 1200, 0.8);
+            if (compressionResult.compressedSize > 900000) {
+                updateSyncStatus('🔄 Дополнительное сжатие...');
+                compressionResult = await compressImage(file, 800, 0.6);
             }
-        }
-
-        // Добавление новой дополнительной объяснительной работы (НОВАЯ ФУНКЦИЯ)
-        async function addAdditionalExplanation(studentName) {
-            const explanations = additionalExplanations[studentName] || [];
-            const newExplanationNumber = explanations.length + 2; // Продолжаем с 2, 3, 4...
-            explanations.push({
-                number: newExplanationNumber,
-                name: `Объяснение ${newExplanationNumber}`
-            });
-            await saveAdditionalExplanations(studentName, explanations);
-            if (currentSelectedStudent === studentName) {
-                initializeStudentWorks(studentName);
+            if (compressionResult.compressedSize > 950000) {
+                throw new Error('Изображение слишком детализированное после сжатия. Попробуйте другое изображение');
             }
+            const compressionInfo = `Сжато: ${(compressionResult.originalSize/1024/1024).toFixed(1)}MB → ${(compressionResult.compressedSize/1024/1024).toFixed(1)}MB (${compressionResult.width}×${compressionResult.height})`;
+            if (isExplanation) {
+                await saveExplanation(student, workType, compressionResult.data, compressionInfo);
+            } else {
+                await saveWork(student, workType, compressionResult.data, compressionInfo);
+            }
+            if (currentSelectedStudent === student) {
+                initializeStudentWorks(student);
+            }
+            updateSyncStatus('✅ Изображение загружено!');
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            updateSyncStatus('❌ Ошибка: ' + error.message, false);
+            alert('Ошибка загрузки: ' + error.message);
         }
+    } else {
+        alert('Пожалуйста, выберите файл изображения (JPEG, PNG)');
+    }
+}
 
-        // Сохранение дополнительных объяснений (НОВАЯ ФУНКЦИЯ)
-        async function saveAdditionalExplanations(studentName, explanationsArray) {
+function compressImage(file, maxWidth = 1200, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.onload = function() {
+            let width = img.width;
+            let height = img.height;
+            if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
             try {
-                await db.collection('additionalExplanations').doc(studentName).set({
-                    explanations: explanationsArray,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                const base64Size = Math.round((compressedBase64.length * 3) / 4);
+                console.log(`Сжатие: ${(file.size/1024/1024).toFixed(1)}MB → ${(base64Size/1024/1024).toFixed(1)}MB (${Math.round((base64Size/file.size)*100)}%)`);
+                resolve({
+                    data: compressedBase64,
+                    originalSize: file.size,
+                    compressedSize: base64Size,
+                    width: width,
+                    height: height
                 });
-                additionalExplanations[studentName] = explanationsArray;
-                updateSyncStatus('✅ Доп. объяснения сохранены');
             } catch (error) {
-                console.error('Ошибка сохранения доп. объяснений:', error);
-                updateSyncStatus('❌ Ошибка сохранения', false);
-                
-                // Fallback
-                additionalExplanations[studentName] = explanationsArray;
-                localStorage.setItem('additionalExplanations', JSON.stringify(additionalExplanations));
+                reject(new Error('Ошибка сжатия изображения'));
             }
-        }
+        };
+        img.onerror = function() {
+            reject(new Error('Ошибка загрузки изображения'));
+        };
+        img.src = URL.createObjectURL(file);
+    });
+}
 
-        // Сохранение имени в рейтинге
-        async function saveRatingName(ratingType, position, name) {
-            const key = `${ratingType}_${position}`;
-            try {
-                await db.collection('ratingNames').doc(key).set({
-                    name: name,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                studentNames[key] = name;
-                updateSyncStatus('✅ Имя сохранено');
-            } catch (error) {
-                console.error('Ошибка сохранения имени:', error);
-                updateSyncStatus('❌ Ошибка сохранения', false);
-                
-                // Fallback
-                studentNames[key] = name;
-                localStorage.setItem('studentNames', JSON.stringify(studentNames));
+async function saveWork(student, workType, imageBase64, compressionInfo = '') {
+    const workKey = `${student}_${workType}`;
+    try {
+        await db.collection('works').doc(workKey).set({
+            image: imageBase64,
+            student: student,
+            workType: workType,
+            compressionInfo: compressionInfo,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        studentWorks[workKey] = {
+            image: imageBase64,
+            compressionInfo: compressionInfo,
+            timestamp: new Date().toISOString()
+        };
+        updateSyncStatus('✅ Работа сохранена');
+    } catch (error) {
+        console.error('Ошибка сохранения работы:', error);
+        updateSyncStatus('❌ Ошибка сохранения', false);
+        studentWorks[workKey] = {
+            image: imageBase64,
+            compressionInfo: compressionInfo,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('studentWorks', JSON.stringify(studentWorks));
+    }
+}
+
+async function deleteWork(student, workType, isExplanation = false) {
+    const workKey = `${student}_${workType}`;
+    if (confirm('Вы уверены, что хотите удалить эту работу?')) {
+        try {
+            if (isExplanation) {
+                await db.collection('explanations').doc(workKey).delete();
+                delete explanationsWorks[workKey];
+            } else {
+                await db.collection('works').doc(workKey).delete();
+                delete studentWorks[workKey];
             }
-        }
-
-        // Сохранение работы (Base64 в Firestore)
-        async function saveWork(student, workType, imageBase64, compressionInfo = '') {
-            const workKey = `${student}_${workType}`;
-            try {
-                await db.collection('works').doc(workKey).set({
-                    image: imageBase64,
-                    student: student,
-                    workType: workType,
-                    compressionInfo: compressionInfo,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                studentWorks[workKey] = {
-                    image: imageBase64,
-                    compressionInfo: compressionInfo,
-                    timestamp: new Date().toISOString()
-                };
-                updateSyncStatus('✅ Работа сохранена');
-            } catch (error) {
-                console.error('Ошибка сохранения работы:', error);
-                updateSyncStatus('❌ Ошибка сохранения', false);
-                
-                // Fallback
-                studentWorks[workKey] = {
-                    image: imageBase64,
-                    compressionInfo: compressionInfo,
-                    timestamp: new Date().toISOString()
-                };
+            if (currentSelectedStudent === student) {
+                initializeStudentWorks(student);
+            }
+            updateSyncStatus('✅ Работа удалена');
+        } catch (error) {
+            console.error('Ошибка удаления:', error);
+            if (isExplanation) {
+                delete explanationsWorks[workKey];
+                localStorage.setItem('explanationsWorks', JSON.stringify(explanationsWorks));
+            } else {
+                delete studentWorks[workKey];
                 localStorage.setItem('studentWorks', JSON.stringify(studentWorks));
             }
-        }
-
-        // === ОБНОВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ СО СЖАТИЕМ ===
-        async function handleWorkUpload(input, student, workType, isExplanation = false) {
-            const file = input.files[0];
-            if (file && file.type.startsWith('image/')) {
-                try {
-                    updateSyncStatus('🔄 Проверка изображения...');
-                    
-                    // УВЕЛИЧИЛИ ЛИМИТ ДО 10MB (после сжатия войдет в 1MB)
-                    if (file.size > 10 * 1024 * 1024) {
-                        throw new Error('Файл слишком большой. Максимум 10MB');
-                    }
-                    
-                    updateSyncStatus('🔄 Сжатие изображения...');
-                    
-                    // Пробуем сжать с нормальными настройками
-                    let compressionResult = await compressImage(file, 1200, 0.8);
-                    
-                    // Если после сжатия все еще больше 900KB, сжимаем сильнее
-                    if (compressionResult.compressedSize > 900000) {
-                        updateSyncStatus('🔄 Дополнительное сжатие...');
-                        compressionResult = await compressImage(file, 800, 0.6);
-                    }
-                    
-                    // Если все еще слишком большой - ошибка
-                    if (compressionResult.compressedSize > 950000) {
-                        throw new Error('Изображение слишком детализированное после сжатия. Попробуйте другое изображение');
-                    }
-                    
-                    const compressionInfo = `Сжато: ${(compressionResult.originalSize/1024/1024).toFixed(1)}MB → ${(compressionResult.compressedSize/1024/1024).toFixed(1)}MB (${compressionResult.width}×${compressionResult.height})`;
-                    console.log(compressionInfo);
-                    
-                    // Сохраняем сжатое изображение
-                    if (isExplanation) {
-                        await saveExplanation(student, workType, compressionResult.data, compressionInfo);
-                    } else {
-                        await saveWork(student, workType, compressionResult.data, compressionInfo);
-                    }
-                    
-                    if (currentSelectedStudent === student) {
-                        initializeStudentWorks(student);
-                    }
-                    updateSyncStatus('✅ Изображение загружено!');
-                    
-                } catch (error) {
-                    console.error('Ошибка загрузки:', error);
-                    updateSyncStatus('❌ Ошибка: ' + error.message, false);
-                    alert('Ошибка загрузки: ' + error.message);
-                }
-            } else {
-                alert('Пожалуйста, выберите файл изображения (JPEG, PNG)');
+            if (currentSelectedStudent === student) {
+                initializeStudentWorks(student);
             }
+            updateSyncStatus('✅ Работа удалена (локально)');
         }
+    }
+}
 
-        // Удаление работы
-        async function deleteWork(student, workType, isExplanation = false) {
-            const workKey = `${student}_${workType}`;
-            if (confirm('Вы уверены, что хотите удалить эту работу?')) {
-                try {
-                    if (isExplanation) {
-                        // Удаляем объяснение
-                        await db.collection('explanations').doc(workKey).delete();
-                        delete explanationsWorks[workKey];
-                    } else {
-                        // Удаляем обычную работу
-                        await db.collection('works').doc(workKey).delete();
-                        delete studentWorks[workKey];
-                    }
-                    
-                    if (currentSelectedStudent === student) {
-                        initializeStudentWorks(student);
-                    }
-                    updateSyncStatus('✅ Работа удалена');
-                    
-                } catch (error) {
-                    console.error('Ошибка удаления:', error);
-                    // Fallback
-                    if (isExplanation) {
-                        delete explanationsWorks[workKey];
-                        localStorage.setItem('explanationsWorks', JSON.stringify(explanationsWorks));
-                    } else {
-                        delete studentWorks[workKey];
-                        localStorage.setItem('studentWorks', JSON.stringify(studentWorks));
-                    }
-                    if (currentSelectedStudent === student) {
-                        initializeStudentWorks(student);
-                    }
-                    updateSyncStatus('✅ Работа удалена (локально)');
-                }
-            }
-        }
-
-        // Инициализация при загрузке
-        document.addEventListener('DOMContentLoaded', async function() {
-            await loadAllData();
-            initializeRatings();
-            initializeStudentsGrid();
-            document.getElementById('workDate').valueAsDate = new Date();
+async function saveRatingName(ratingType, position, name) {
+    const key = `${ratingType}_${position}`;
+    try {
+        await db.collection('ratingNames').doc(key).set({
+            name: name,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         });
+        studentNames[key] = name;
+        updateSyncStatus('✅ Имя сохранено');
+        updateRatings();
+    } catch (error) {
+        console.error('Ошибка сохранения имени:', error);
+        updateSyncStatus('❌ Ошибка сохранения', false);
+        studentNames[key] = name;
+        localStorage.setItem('studentNames', JSON.stringify(studentNames));
+        updateRatings();
+    }
+}
 
-        function initializeRatings() {
-            const rating1List = document.getElementById('rating1List');
-            const rating2List = document.getElementById('rating2List');
+async function loadAdditionalExplanations() {
+    try {
+        const snapshot = await db.collection('additionalExplanations').get();
+        additionalExplanations = {};
+        snapshot.forEach(doc => {
+            additionalExplanations[doc.id] = doc.data().explanations || [];
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки доп. объяснений:', error);
+        additionalExplanations = JSON.parse(localStorage.getItem('additionalExplanations')) || {};
+    }
+}
 
-            rating1List.innerHTML = '';
-            rating2List.innerHTML = '';
-
-            // Первый рейтинг
-            rating1Titles.forEach((title, index) => {
-                const isTopThree = index < 3;
-                const studentItem = createRatingItem(index + 1, title, 'rating1', isTopThree);
-                rating1List.appendChild(studentItem);
-            });
-
-            // Второй рейтинг
-            rating2Titles.forEach((title, index) => {
-                const isTopThree = index < 3;
-                const studentItem = createRatingItem(index + 1, title, 'rating2', isTopThree);
-                rating2List.appendChild(studentItem);
-            });
-        }
-
-        // Создаем элемент рейтинга с полем ввода имени
-        function createRatingItem(place, title, ratingType, isTopThree = false) {
-            const item = document.createElement('div');
-            item.className = `student-item ${isTopThree ? 'top-three' : ''}`;
-            
-            const nameKey = `${ratingType}_${place}`;
-            const savedName = studentNames[nameKey] || '';
-            
-            item.innerHTML = `
-                <div class="name-input-container">
-                    <input 
-                        type="text" 
-                        class="name-input" 
-                        placeholder="Введите имя" 
-                        value="${savedName}"
-                        maxlength="15"
-                        oninput="saveRatingName('${ratingType}', ${place}, this.value)"
-                    >
-                </div>
-                <div class="student-info">
-                    <div class="student-name">${place} место</div>
-                    <div class="student-title">${title}</div>
-                </div>
-            `;
-            
-            return item;
-        }
-
-        // Инициализация сетки учеников
-        function initializeStudentsGrid() {
-            const studentsGrid = document.getElementById('studentsGrid');
-            studentsGrid.innerHTML = '';
-            
-            students.forEach(student => {
-                const words = studentWords[student] || [];
-                const card = document.createElement('div');
-                card.className = `student-card ${currentSelectedStudent === student ? 'active' : ''}`;
-                card.innerHTML = `
-                    <div class="student-card-name">${student}</div>
-                    <div class="student-card-words">${words.length} words</div>
-                `;
-                card.onclick = () => openStudentWorks(student);
-                studentsGrid.appendChild(card);
-            });
-        }
-
-        // Открытие работ ученика
-        function openStudentWorks(student) {
-            currentSelectedStudent = student;
-            initializeStudentsGrid();
-            initializeStudentWorks(student);
-            
-            const section = document.getElementById('studentWorksSection');
-            section.classList.add('active');
-            document.getElementById('selectedStudentName').textContent = student;
-            
-            // Прокрутка к секции
-            section.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // Закрытие работ ученика
-        function closeStudentWorks() {
-            currentSelectedStudent = null;
-            const section = document.getElementById('studentWorksSection');
-            section.classList.remove('active');
-            initializeStudentsGrid();
-            // Возвращаем заголовок "Ваши Работы" когда закрываем секцию
-            document.getElementById('selectedStudentName').textContent = "📄 Ваши Работы";
-        }
-
-        // Инициализация работ выбранного ученика
-        function initializeStudentWorks(student) {
-            const worksList = document.getElementById('worksList');
-            worksList.innerHTML = '';
-            
-            const workItem = document.createElement('div');
-            workItem.className = 'work-item';
-            
-            workItem.innerHTML = `
-                <div class="words-container">
-                    ${createWordsSection(student)}
-                </div>
-                <div class="works-container">
-                    <div class="works-category">
-                        <div class="category-title">Основные работы</div>
-                        <div class="works-row">
-                            <div class="upload-areas">
-                                ${createWorkArea(student, 'work1')}
-                                ${createWorkArea(student, 'work2')}
-                                ${createWorkArea(student, 'work3')}
-                            </div>
-                        </div>
-                        <button class="add-work-btn" onclick="toggleAdditionalWorks('${student}', 'work')">+</button>
-                        <div class="additional-works" id="additionalWorks_${student}_work">
-                            ${createAdditionalWorks(student, 'work')}
-                        </div>
-                    </div>
-                    <div class="works-category">
-                        <div class="category-title">Проверки</div>
-                        <div class="works-row">
-                            <div class="upload-areas">
-                                ${createWorkArea(student, 'check1')}
-                                ${createWorkArea(student, 'check2')}
-                                ${createWorkArea(student, 'check3')}
-                            </div>
-                        </div>
-                        <button class="add-work-btn" onclick="toggleAdditionalWorks('${student}', 'check')">+</button>
-                        <div class="additional-works" id="additionalWorks_${student}_check">
-                            ${createAdditionalWorks(student, 'check')}
-                        </div>
-                    </div>
-                    <div class="works-category">
-                        <div class="category-title">Ваши объяснения</div>
-                        <div class="works-row">
-                            <div class="upload-areas">
-                                ${createExplanationArea(student, 'explain1')}
-                            </div>
-                        </div>
-                        <button class="add-work-btn" onclick="toggleAdditionalExplanations('${student}')">+</button>
-                        <div class="additional-works" id="additionalExplanations_${student}">
-                            ${createAdditionalExplanations(student)}
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            worksList.appendChild(workItem);
-        }
-
-        function createWordsSection(student) {
-            const words = studentWords[student] || [];
-            const hasWords = words.length > 0;
-            const currentIndex = currentWordIndexes[student] || 0;
-            
-            return `
-                <!-- Счетчик слов - первый -->
-                <div class="words-counter">
-                    ${words.length} words
-                </div>
-                
-                <!-- Поле со словами и стрелочками - второй -->
-                <div class="words-display-container">
-                    <div class="word-navigation">
-                        <button class="nav-arrow" onclick="navigateWord('${student}', -1)" ${words.length <= 1 ? 'disabled' : ''}>◀</button>
-                        <div class="current-word-display">
-                            ${hasWords ? 
-                                `<div class="word-text">${words[currentIndex]}</div>
-                                 <button class="delete-word-btn" onclick="removeCurrentWord('${student}')" title="Удалить слово">🗑️ Удалить</button>
-                                 <div class="word-counter">${currentIndex + 1}</div>` 
-                                : '<div class="no-words">No words added</div>'
-                            }
-                        </div>
-                        <button class="nav-arrow" onclick="navigateWord('${student}', 1)" ${words.length <= 1 ? 'disabled' : ''}>▶</button>
-                    </div>
-                </div>
-                
-                <!-- Поле добавления слова - третий (справа) -->
-                <div class="word-input-container">
-                    <input 
-                        type="text" 
-                        class="word-input" 
-                        id="wordInput_${student}"
-                        placeholder="Add word"
-                        onkeypress="handleWordInput(event, '${student}')"
-                    >
-                </div>
-            `;
-        }
-
-        // Обработка ввода слова - ИСПРАВЛЕННАЯ ВЕРСИЯ
-        function handleWordInput(event, student) {
-            if (event.key === 'Enter') {
-                const input = event.target;
-                const word = input.value.trim();
-                if (word) {
-                    addNewWord(student, word).then(() => {
-                        input.value = '';
-                        // ВОТ ИСПРАВЛЕНИЕ - сохраняем ссылку на input и возвращаем фокус
-                        setTimeout(() => {
-                            input.focus();
-                        }, 0);
-                    });
-                }
-                event.preventDefault();
-            }
-        }
-
-        // Навигация по словам
-        let currentWordIndexes = {};
-        
-        function navigateWord(student, direction) {
-            const words = studentWords[student] || [];
-            if (words.length === 0) return;
-            
-            if (!currentWordIndexes.hasOwnProperty(student)) {
-                currentWordIndexes[student] = 0;
-            }
-            
-            let newIndex = currentWordIndexes[student] + direction;
-            
-            if (newIndex < 0) newIndex = words.length - 1;
-            if (newIndex >= words.length) newIndex = 0;
-            
-            currentWordIndexes[student] = newIndex;
-            
-            const displayElement = document.querySelector(`[onkeypress="handleWordInput(event, '${student}')"]`)
-                ?.closest('.words-container')
-                ?.querySelector('.current-word-display');
-                
-            if (displayElement) {
-                displayElement.innerHTML = `
-                    <div class="word-text">${words[newIndex]}</div>
-                    <button class="delete-word-btn" onclick="removeCurrentWord('${student}')" title="Удалить слово">🗑️ Удалить</button>
-                    <div class="word-counter">${newIndex + 1}</div>
-                `;
-                
-                const prevButton = displayElement.parentElement.querySelector('.nav-arrow:first-child');
-                const nextButton = displayElement.parentElement.querySelector('.nav-arrow:last-child');
-                
-                if (words.length <= 1) {
-                    prevButton.disabled = true;
-                    nextButton.disabled = true;
-                } else {
-                    prevButton.disabled = false;
-                    nextButton.disabled = false;
-                }
-
-                const counterElement = displayElement.closest('.words-container').querySelector('.words-counter');
-                if (counterElement) {
-                    counterElement.textContent = `${words.length} words`;
-                }
-            }
-        }
-
-        // Переключение дополнительных работ
-        function toggleAdditionalWorks(student, workType) {
-            const element = document.getElementById(`additionalWorks_${student}_${workType}`);
-            element.classList.toggle('active');
-            
-            const works = additionalWorks[student] || [];
-            const hasWorksOfType = works.filter(w => w.type === workType).length > 0;
-            
-            if (!hasWorksOfType && element.classList.contains('active')) {
-                addAdditionalWork(student, workType);
-            }
-        }
-
-        // Переключение дополнительных объяснений (НОВАЯ ФУНКЦИЯ)
-        function toggleAdditionalExplanations(student) {
-            const element = document.getElementById(`additionalExplanations_${student}`);
-            element.classList.toggle('active');
-            
-            const explanations = additionalExplanations[student] || [];
-            
-            if (explanations.length === 0 && element.classList.contains('active')) {
-                addAdditionalExplanation(student);
-            }
-        }
-
-        function createAdditionalWorks(student, workType) {
-            const works = additionalWorks[student] || [];
-            const filteredWorks = works.filter(w => w.type === workType);
-            
-            if (filteredWorks.length === 0) {
-                return '<div style="text-align: center; color: #aaa; padding: 10px;">Нет дополнительных работ</div>';
-            }
-            
-            return `
-                <div class="works-row">
-                    <div class="upload-areas">
-                        ${filteredWorks.map(work => createWorkArea(student, `${workType}${work.number}`)).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Создание дополнительных объяснений (НОВАЯ ФУНКЦИЯ)
-        function createAdditionalExplanations(student) {
-            const explanations = additionalExplanations[student] || [];
-            
-            if (explanations.length === 0) {
-                return '<div style="text-align: center; color: #aaa; padding: 10px;">Нет дополнительных объяснений</div>';
-            }
-            
-            return `
-                <div class="works-row">
-                    <div class="upload-areas">
-                        ${explanations.map(expl => createExplanationArea(student, `explain${expl.number}`)).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function createWorkArea(student, workType) {
-            const workKey = `${student}_${workType}`;
-            const workData = studentWorks[workKey];
-            
-            if (workData && workData.image) {
-                const compressionInfo = workData.compressionInfo ? `<div class="compression-info">${workData.compressionInfo}</div>` : '';
-                
-                return `
-                    <div class="upload-area has-work">
-                        <img src="${workData.image}" class="work-preview" alt="${workType}" onclick="openFullscreen('${workData.image}')">
-                        <div class="work-number">${getWorkTitle(workType)}</div>
-                        ${compressionInfo}
-                        <div class="upload-time">${formatDateTime(workData.timestamp)}</div>
-                        <button class="delete-btn" onclick="deleteWork('${student}', '${workType}', false)">🗑️ Удалить</button>
-                        <input type="file" class="file-input" accept="image/*" onchange="handleWorkUpload(this, '${student}', '${workType}', false)">
-                    </div>
-                `;
-            } else {
-                return `
-                    <div class="upload-area" onclick="triggerWorkUpload(this, '${student}', '${workType}', false)">
-                        <div class="work-number">${getWorkTitle(workType)}</div>
-                        <div class="upload-text">Нажмите для загрузки</div>
-                        <div class="compression-info">Поддерживаются файлы до 10MB</div>
-                        <input type="file" class="file-input" accept="image/*" onchange="handleWorkUpload(this, '${student}', '${workType}', false)">
-                    </div>
-                `;
-            }
-        }
-
-        // Создание области для объяснений (НОВАЯ ФУНКЦИЯ)
-        function createExplanationArea(student, workType) {
-            const workKey = `${student}_${workType}`;
-            const workData = explanationsWorks[workKey];
-            
-            if (workData && workData.image) {
-                const compressionInfo = workData.compressionInfo ? `<div class="compression-info">${workData.compressionInfo}</div>` : '';
-                
-                return `
-                    <div class="upload-area has-work">
-                        <img src="${workData.image}" class="work-preview" alt="${workType}" onclick="openFullscreen('${workData.image}')">
-                        <div class="work-number">${getExplanationTitle(workType)}</div>
-                        ${compressionInfo}
-                        <div class="upload-time">${formatDateTime(workData.timestamp)}</div>
-                        <button class="delete-btn" onclick="deleteWork('${student}', '${workType}', true)">🗑️ Удалить</button>
-                        <input type="file" class="file-input" accept="image/*" onchange="handleWorkUpload(this, '${student}', '${workType}', true)">
-                    </div>
-                `;
-            } else {
-                return `
-                    <div class="upload-area" onclick="triggerExplanationUpload(this, '${student}', '${workType}')">
-                        <div class="work-number">${getExplanationTitle(workType)}</div>
-                        <div class="upload-text">Нажмите для загрузки</div>
-                        <div class="compression-info">Поддерживаются файлы до 10MB</div>
-                        <input type="file" class="file-input" accept="image/*" onchange="handleWorkUpload(this, '${student}', '${workType}', true)">
-                    </div>
-                `;
-            }
-        }
-
-        function triggerWorkUpload(areaElement, student, workType, isExplanation = false) {
-            const fileInput = areaElement.querySelector('.file-input');
-            fileInput.click();
-        }
-
-        function triggerExplanationUpload(areaElement, student, workType) {
-            const fileInput = areaElement.querySelector('.file-input');
-            fileInput.click();
-        }
-
-        function formatDateTime(timestamp) {
-            if (!timestamp) return '';
-            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            const day = date.getDate().toString().padStart(2, '0');
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const year = date.getFullYear();
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            
-            return `Загружено: ${day}.${month}.${year} ${hours}:${minutes}`;
-        }
-
-        function getWorkTitle(workType) {
-            if (workType.startsWith('work') && workType.length > 4) {
-                const num = workType.substring(4);
-                return `Работа ${num}`;
-            }
-            if (workType.startsWith('check') && workType.length > 5) {
-                const num = workType.substring(5);
-                return `Проверка ${num}`;
-            }
-            
-            const titles = {
-                'work1': 'Работа 1', 'work2': 'Работа 2', 'work3': 'Работа 3',
-                'check1': 'Проверка 1', 'check2': 'Проверка 2', 'check3': 'Проверка 3'
-            };
-            return titles[workType] || workType;
-        }
-
-        function getExplanationTitle(workType) {
-            if (workType.startsWith('explain') && workType.length > 7) {
-                const num = workType.substring(7);
-                return `Объяснение ${num}`;
-            }
-            return 'Объяснение 1';
-        }
-
-        function openFullscreen(imageSrc) {
-            const modal = document.getElementById('imageModal');
-            const modalImg = document.getElementById('fullscreenImage');
-            modal.style.display = 'block';
-            modalImg.src = imageSrc;
-            
-            modal.onclick = function(event) {
-                if (event.target === modal) {
-                    closeModal();
-                }
-            };
-            
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape') {
-                    closeModal();
-                }
-            });
-        }
-
-        function closeModal() {
-            document.getElementById('imageModal').style.display = 'none';
-        }
-
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
-            });
-            document.getElementById(pageId).classList.add('active');
-            window.scrollTo(0, 0);
-            
-            if (pageId === 'worksPage') {
-                closeStudentWorks();
-            }
-        }
-
-        // Инициализация дополнительных объяснений при загрузке
-        let additionalExplanations = {};
-
-        // Загрузка дополнительных объяснений
-        async function loadAdditionalExplanations() {
-            try {
-                const snapshot = await db.collection('additionalExplanations').get();
-                additionalExplanations = {};
-                snapshot.forEach(doc => {
-                    additionalExplanations[doc.id] = doc.data().explanations || [];
-                });
-            } catch (error) {
-                console.error('Ошибка загрузки доп. объяснений:', error);
-                additionalExplanations = JSON.parse(localStorage.getItem('additionalExplanations')) || {};
-            }
-        }
-
-        // Обновляем загрузку данных
-        async function loadAllData() {
-            try {
-                updateSyncStatus('🔄 Загрузка данных...');
-                
-                // Загружаем слова
-                const wordsSnapshot = await db.collection('words').get();
-                studentWords = {};
-                wordsSnapshot.forEach(doc => {
-                    studentWords[doc.id] = doc.data().words || [];
-                });
-                
-                // Загружаем основные работы
-                const worksSnapshot = await db.collection('works').get();
-                studentWorks = {};
-                worksSnapshot.forEach(doc => {
-                    studentWorks[doc.id] = doc.data();
-                });
-
-                // Загружаем имена для рейтингов
-                const namesSnapshot = await db.collection('ratingNames').get();
-                studentNames = {};
-                namesSnapshot.forEach(doc => {
-                    studentNames[doc.id] = doc.data().name;
-                });
-
-                // Загружаем дополнительные работы
-                const additionalSnapshot = await db.collection('additionalWorks').get();
-                additionalWorks = {};
-                additionalSnapshot.forEach(doc => {
-                    additionalWorks[doc.id] = doc.data().works || [];
-                });
-
-                // Загружаем объяснения
-                const explanationsSnapshot = await db.collection('explanations').get();
-                explanationsWorks = {};
-                explanationsSnapshot.forEach(doc => {
-                    explanationsWorks[doc.id] = doc.data();
-                });
-
-                // Загружаем дополнительные объяснения
-                await loadAdditionalExplanations();
-                
-                updateSyncStatus('✅ Данные загружены');
-                
-            } catch (error) {
-                console.error('Ошибка загрузки данных:', error);
-                updateSyncStatus('❌ Ошибка загрузки', false);
-                
-                // Fallback на localStorage
-                studentWords = JSON.parse(localStorage.getItem('studentWords')) || {};
-                studentWorks = JSON.parse(localStorage.getItem('studentWorks')) || {};
-                studentNames = JSON.parse(localStorage.getItem('studentNames')) || {};
-                additionalWorks = JSON.parse(localStorage.getItem('additionalWorks')) || {};
-                explanationsWorks = JSON.parse(localStorage.getItem('explanationsWorks')) || {};
-                additionalExplanations = JSON.parse(localStorage.getItem('additionalExplanations')) || {};
-            }
-        }
-    </script>
-</body>
-</html>
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadAllData();
+    initializeStudentsGrid();
+    document.getElementById('workDate').valueAsDate = new Date();
+});
