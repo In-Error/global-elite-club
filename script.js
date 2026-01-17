@@ -124,7 +124,7 @@ async function loadAllData() {
         
         updateSyncStatus('✅ Данные загружены');
         
-    } catch (error) {
+    } catch (error) 
         console.error('Ошибка загрузки данных:', error);
         updateSyncStatus('❌ Ошибка загрузки', false);
         
