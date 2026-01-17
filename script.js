@@ -1423,7 +1423,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             weekSelector.value = currentSelectedWeek;
         }
         
-        weekSelector.addEventListener('change', function() {
+         weekSelector.addEventListener('change', function() {
             const weekId = this.value;
             currentSelectedWeek = weekId;
             localStorage.setItem('lastSelectedWeek', weekId);
@@ -1432,4 +1432,4 @@ document.addEventListener('DOMContentLoaded', async function() {
             initializeWeekRating(weekId);
         });
     }
-    
+});
