@@ -27,7 +27,7 @@ let additionalWorks = {};
 let totalPoints = {};
 let currentSelectedStudent = null;
 let currentWordIndexes = {};
-let helpSectionsData = {}; // Изменил название, чтобы избежать конфликта
+let helpSectionsData = {};
 let currentSectionId = null;
 let isHelpAdminMode = false;
 let currentSelectedWeek = null;
@@ -1003,13 +1003,29 @@ function updateHelpUI() {
             const sectionDiv = document.createElement('div');
             sectionDiv.className = `section-card ${currentSectionId === id ? 'active' : ''}`;
             sectionDiv.innerHTML = `
-                <div class="section-title">${section.title || 'Без названия'}</div>
-                <div class="section-actions">
-                    <button class="edit-section-btn" onclick="editSection('${id}')">✏️</button>
-                    <button class="delete-section-btn" onclick="deleteSection('${id}')">🗑️</button>
+                <div class="section-header">
+                    <div class="section-title-container">
+                        <span class="section-arrow" id="sectionArrow_${id}">▶</span>
+                        <div class="section-title">${section.title || 'Без названия'}</div>
+                    </div>
+                    <div class="section-actions">
+                        <button class="edit-section-btn" onclick="editSection('${id}')">✏️</button>
+                        <button class="delete-section-btn" onclick="deleteSection('${id}')">🗑️</button>
+                    </div>
+                </div>
+                <div class="section-content-collapsible" id="sectionContent_${id}" style="display: none;">
+                    ${section.content || '<p style="color: #aaa;">Содержание пока не добавлено...</p>'}
                 </div>
             `;
-            sectionDiv.onclick = () => editSection(id);
+            
+            // Добавляем обработчик клика на заголовок
+            const header = sectionDiv.querySelector('.section-header');
+            header.onclick = (e) => {
+                if (!e.target.closest('.section-actions')) {
+                    toggleSectionContent(id);
+                }
+            };
+            
             sectionsList.appendChild(sectionDiv);
         });
         
@@ -1023,10 +1039,15 @@ function updateHelpUI() {
         
         Object.entries(helpSectionsData).forEach(([id, section]) => {
             const sectionDiv = document.createElement('div');
-            sectionDiv.className = 'section-view';
+            sectionDiv.className = 'section-view-collapsible';
             sectionDiv.innerHTML = `
-                <h3>${section.title || 'Без названия'}</h3>
-                <div class="section-content">${section.content || '<p style="color: #aaa;">Содержание пока не добавлено...</p>'}</div>
+                <div class="section-view-header" onclick="toggleSectionContent('${id}')">
+                    <span class="section-arrow" id="sectionArrow_${id}">▶</span>
+                    <h3>${section.title || 'Без названия'}</h3>
+                </div>
+                <div class="section-view-content" id="sectionContent_${id}" style="display: none;">
+                    ${section.content || '<p style="color: #aaa;">Содержание пока не добавлено...</p>'}
+                </div>
             `;
             helpSectionsView.appendChild(sectionDiv);
         });
@@ -1038,6 +1059,11 @@ function updateHelpUI() {
 }
 
 function toggleHelpMode() {
+    if (!checkAdminAuth()) {
+        showPasswordPage();
+        return;
+    }
+    
     isHelpAdminMode = !isHelpAdminMode;
     
     const adminMode = document.getElementById('adminMode');
@@ -1064,6 +1090,11 @@ function toggleHelpMode() {
 }
 
 function addNewSection() {
+    if (!checkAdminAuth()) {
+        showPasswordPage();
+        return;
+    }
+    
     const modal = document.getElementById('sectionModal');
     if (modal) {
         modal.style.display = 'block';
@@ -1084,6 +1115,11 @@ function closeSectionModal() {
 }
 
 async function saveNewSection() {
+    if (!checkAdminAuth()) {
+        showPasswordPage();
+        return;
+    }
+    
     const input = document.getElementById('sectionNameInput');
     if (!input) return;
     
@@ -1119,6 +1155,11 @@ async function saveNewSection() {
 }
 
 function editSection(sectionId) {
+    if (!checkAdminAuth()) {
+        showPasswordPage();
+        return;
+    }
+    
     currentSectionId = sectionId;
     const section = helpSectionsData[sectionId];
     
@@ -1127,6 +1168,9 @@ function editSection(sectionId) {
         editorContainer.style.display = 'block';
         editorContainer.innerHTML = createEditorHTML(section);
         initEditor();
+        
+        // Прокручиваем к редактору
+        editorContainer.scrollIntoView({ behavior: 'smooth' });
     }
     
     updateHelpUI();
@@ -1207,6 +1251,11 @@ function updateEditorState() {
 }
 
 async function saveSectionContent() {
+    if (!checkAdminAuth()) {
+        showPasswordPage();
+        return;
+    }
+    
     if (!currentSectionId) return;
     
     const editorContent = document.getElementById('editorContent');
@@ -1225,6 +1274,7 @@ async function saveSectionContent() {
         alert('Изменения сохранены!');
         
         updateHelpUI();
+        cancelEditing();
         
     } catch (error) {
         console.error('Ошибка сохранения:', error);
@@ -1242,6 +1292,11 @@ function cancelEditing() {
 }
 
 async function deleteSection(sectionId) {
+    if (!checkAdminAuth()) {
+        showPasswordPage();
+        return;
+    }
+    
     if (!confirm('Удалить этот раздел?')) return;
     
     try {
@@ -1258,6 +1313,18 @@ async function deleteSection(sectionId) {
     } catch (error) {
         console.error('Ошибка удаления:', error);
         alert('Ошибка: ' + error.message);
+    }
+}
+
+// НОВАЯ функция для открытия/закрытия содержимого раздела
+function toggleSectionContent(sectionId) {
+    const contentElement = document.getElementById(`sectionContent_${sectionId}`);
+    const arrowElement = document.getElementById(`sectionArrow_${sectionId}`);
+    
+    if (contentElement && arrowElement) {
+        const isVisible = contentElement.style.display === 'block';
+        contentElement.style.display = isVisible ? 'none' : 'block';
+        arrowElement.textContent = isVisible ? '▶' : '▼';
     }
 }
 
@@ -1320,7 +1387,13 @@ function checkAdminPassword() {
     if (enteredPassword === correctPassword) {
         errorElement.style.display = 'none';
         localStorage.setItem('adminAuthenticated', 'true');
-        showPage('adminPage');
+        
+        // Если мы были на странице помощи, возвращаемся туда
+        if (window.location.hash === '#helpPage') {
+            showPage('helpPage');
+        } else {
+            showPage('adminPage');
+        }
     } else {
         errorElement.style.display = 'block';
         passwordInput.value = '';
@@ -1353,6 +1426,11 @@ function showPage(pageId) {
     
     window.scrollTo(0, 0);
     
+    // Сохраняем текущую страницу в hash для возврата
+    if (pageId !== 'passwordPage') {
+        window.location.hash = pageId;
+    }
+    
     if (pageId === 'worksPage') {
         closeStudentWorks();
     } else if (pageId === 'adminPage') {
@@ -1363,6 +1441,20 @@ function showPage(pageId) {
         initializeAdminPage();
     } else if (pageId === 'helpPage') {
         loadHelpSections();
+        // Если пользователь не авторизован, скрываем кнопку редактирования
+        if (!checkAdminAuth()) {
+            const toggleBtn = document.getElementById('toggleModeBtn');
+            if (toggleBtn) {
+                toggleBtn.style.display = 'none';
+            }
+            isHelpAdminMode = false;
+        } else {
+            const toggleBtn = document.getElementById('toggleModeBtn');
+            if (toggleBtn) {
+                toggleBtn.style.display = 'inline-block';
+            }
+        }
+        updateHelpUI();
     }
 }
 
@@ -1378,6 +1470,7 @@ function closeStudentWorks() {
         selectedStudentName.textContent = "📄 Ваши Работы";
     }
 }
+
 // === ИНИЦИАЛИЗАЦИЯ ===
 document.addEventListener('DOMContentLoaded', async function() {
     // Создаем глобальные функции
@@ -1407,6 +1500,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     window.cancelEditing = cancelEditing;
     window.editSection = editSection;
     window.deleteSection = deleteSection;
+    window.toggleSectionContent = toggleSectionContent;
+    window.checkAdminPassword = checkAdminPassword;
+    window.showPasswordPage = showPasswordPage;
     
     await loadAllData();
     
@@ -1423,7 +1519,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             weekSelector.value = currentSelectedWeek;
         }
         
-         weekSelector.addEventListener('change', function() {
+        weekSelector.addEventListener('change', function() {
             const weekId = this.value;
             currentSelectedWeek = weekId;
             localStorage.setItem('lastSelectedWeek', weekId);
@@ -1431,5 +1527,17 @@ document.addEventListener('DOMContentLoaded', async function() {
             loadWeekRankings(weekId);
             initializeWeekRating(weekId);
         });
+    }
+    
+    // Проверяем hash при загрузке для возврата на нужную страницу
+    if (window.location.hash) {
+        const pageId = window.location.hash.substring(1);
+        if (pageId && document.getElementById(pageId)) {
+            showPage(pageId);
+        } else {
+            showPage('mainPage');
+        }
+    } else {
+        showPage('mainPage');
     }
 });
