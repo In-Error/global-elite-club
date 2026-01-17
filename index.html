@@ -33,62 +33,50 @@
             </div>
 
             <div class="nav-buttons">
-    <button class="nav-btn-blue" onclick="showPage('worksPage')">📄 Ваши работы</button>
-    <button class="nav-btn-help" onclick="showPage('helpPage')">❓ Как объяснить ошибки?</button>
-    <button class="nav-btn-admin" onclick="showPage('adminPage')">⚙️ Админка</button>
-</div>
-            <!-- Страница помощи -->
-<div id="helpPage" class="page">
-    <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="color: #9370db; text-shadow: 0 0 15px rgba(147, 112, 219, 0.7); font-size: 1.4em;">
-            ❓ Как объяснить ошибки?
-        </h2>
-        <button id="toggleModeBtn" class="toggle-mode-btn" onclick="toggleHelpMode()">
-            🔧 Режим редактирования
-        </button>
-    </div>
-
-    <!-- Режим администратора (редактирование) -->
-    <div id="adminMode" style="display: none;">
-        <div class="help-admin-section">
-            <div class="admin-controls">
-                <button class="add-section-btn" onclick="addNewSection()">+ Добавить раздел</button>
-            </div>
-            
-            <div class="sections-list" id="sectionsList">
-                <!-- Список разделов будет здесь -->
-            </div>
-            
-            <div class="editor-container" id="editorContainer" style="display: none;">
-                <!-- Редактор будет здесь -->
+                <button class="nav-btn-blue" onclick="showPage('worksPage')">📄 Ваши работы</button>
+                <button class="nav-btn-help" onclick="showPage('helpPage')">❓ Как объяснить ошибки?</button>
+                <button class="nav-btn-admin" onclick="showPage('adminPage')">⚙️ Админка</button>
             </div>
         </div>
-    </div>
 
-    <!-- Режим ученика (просмотр) -->
-    <div id="studentMode">
-        <div class="help-sections-view" id="helpSectionsView">
-            <!-- Разделы для просмотра будут здесь -->
-        </div>
-    </div>
+        <!-- Страница помощи -->
+        <div id="helpPage" class="page">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #9370db; text-shadow: 0 0 15px rgba(147, 112, 219, 0.7); font-size: 1.4em;">
+                    ❓ Как объяснить ошибки?
+                </h2>
+                <button id="toggleModeBtn" class="toggle-mode-btn" onclick="toggleHelpMode()">
+                    🔧 Режим редактирования
+                </button>
+            </div>
 
-    <div class="nav-buttons">
-        <button class="nav-btn-yellow" onclick="showPage('mainPage')">← На главную</button>
-    </div>
-</div>
+            <!-- Режим администратора (редактирование) -->
+            <div id="adminMode" style="display: none;">
+                <div class="help-admin-section">
+                    <div class="admin-controls">
+                        <button class="add-section-btn" onclick="addNewSection()">+ Добавить раздел</button>
+                    </div>
+                    
+                    <div class="sections-list" id="sectionsList">
+                        <!-- Список разделов будет здесь -->
+                    </div>
+                    
+                    <div class="editor-container" id="editorContainer" style="display: none;">
+                        <!-- Редактор будет здесь -->
+                    </div>
+                </div>
+            </div>
 
-<!-- Модальное окно для создания раздела -->
-<div id="sectionModal" class="modal">
-    <div class="modal-content-section" style="background: #1a1a1a; padding: 20px; border-radius: 10px; max-width: 400px; margin: 100px auto;">
-        <h3 style="color: #9370db; margin-bottom: 15px;">Новый раздел</h3>
-        <input type="text" id="sectionNameInput" placeholder="Название раздела (например: Артикли)" 
-               style="width: 100%; padding: 10px; margin-bottom: 15px; background: #2a2a2a; color: white; border: 2px solid #9370db; border-radius: 5px;">
-        <div style="display: flex; gap: 10px;">
-            <button onclick="closeSectionModal()" class="cancel-btn" style="flex: 1; padding: 10px; background: #555; color: white; border: none; border-radius: 5px; cursor: pointer;">Отмена</button>
-            <button onclick="saveNewSection()" class="save-btn" style="flex: 1; padding: 10px; background: #9370db; color: white; border: none; border-radius: 5px; cursor: pointer;">Создать</button>
-        </div>
-    </div>
-</div>
+            <!-- Режим ученика (просмотр) -->
+            <div id="studentMode">
+                <div class="help-sections-view" id="helpSectionsView">
+                    <!-- Разделы для просмотра будут здесь -->
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn-yellow" onclick="showPage('mainPage')">← На главную</button>
+            </div>
         </div>
 
         <!-- Страница просмотра работ -->
@@ -160,6 +148,19 @@
 
             <div class="nav-buttons">
                 <button class="nav-btn-yellow" onclick="showPage('mainPage')">← На главную</button>
+            </div>
+        </div>
+
+        <!-- Модальное окно для создания раздела помощи -->
+        <div id="sectionModal" class="modal">
+            <div class="modal-content-section" style="background: #1a1a1a; padding: 20px; border-radius: 10px; max-width: 400px; margin: 100px auto;">
+                <h3 style="color: #9370db; margin-bottom: 15px;">Новый раздел</h3>
+                <input type="text" id="sectionNameInput" placeholder="Название раздела (например: Артикли)" 
+                       style="width: 100%; padding: 10px; margin-bottom: 15px; background: #2a2a2a; color: white; border: 2px solid #9370db; border-radius: 5px;">
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="closeSectionModal()" class="cancel-btn" style="flex: 1; padding: 10px; background: #555; color: white; border: none; border-radius: 5px; cursor: pointer;">Отмена</button>
+                    <button onclick="saveNewSection()" class="save-btn" style="flex: 1; padding: 10px; background: #9370db; color: white; border: none; border-radius: 5px; cursor: pointer;">Создать</button>
+                </div>
             </div>
         </div>
     </div>
