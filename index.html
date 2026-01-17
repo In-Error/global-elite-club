@@ -202,5 +202,41 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
+    <!-- Подключаем Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="script.js"></script>
+
+<!-- Добавь этот скрипт здесь -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Закрытие модального окна по ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const modal = document.getElementById('sectionModal');
+            if (modal && modal.style.display === 'block') {
+                closeSectionModal();
+            }
+            
+            // Также закрываем модальное окно с изображением
+            const imageModal = document.getElementById('imageModal');
+            if (imageModal && imageModal.style.display === 'block') {
+                closeModal();
+            }
+        }
+    });
+    
+    // Закрытие модального окна по клику вне его
+    const modal = document.getElementById('sectionModal');
+    if (modal) {
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeSectionModal();
+            }
+        });
+    }
+});
+</script>
+
 </body>
 </html>
