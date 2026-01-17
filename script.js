@@ -1378,4 +1378,92 @@ document.addEventListener('DOMContentLoaded', async function() {
             initializeWeekRating(weekId);
         });
     }
+    // === ФУНКЦИИ ДЛЯ ПАРОЛЯ АДМИНКИ ===
+function showPasswordPage() {
+    showPage('passwordPage');
+    const passwordInput = document.getElementById('adminPassword');
+    if (passwordInput) {
+        passwordInput.value = '';
+        passwordInput.focus();
+    }
+    const errorElement = document.getElementById('passwordError');
+    if (errorElement) {
+        errorElement.style.display = 'none';
+    }
+}
+
+function checkAdminPassword() {
+    const passwordInput = document.getElementById('adminPassword');
+    const errorElement = document.getElementById('passwordError');
+    
+    if (!passwordInput || !errorElement) return;
+    
+    const enteredPassword = passwordInput.value.trim();
+    const correctPassword = 'Adher357'; // Твой пароль
+    
+    if (enteredPassword === correctPassword) {
+        // Правильный пароль
+        errorElement.style.display = 'none';
+        
+        // Сохраняем в localStorage, что пользователь авторизован
+        localStorage.setItem('adminAuthenticated', 'true');
+        
+        // Переходим в админку
+        showPage('adminPage');
+    } else {
+        // Неправильный пароль
+        errorElement.style.display = 'block';
+        passwordInput.value = '';
+        passwordInput.focus();
+        
+        // Добавляем анимацию ошибки
+        passwordInput.style.borderColor = '#ff0000';
+        passwordInput.style.boxShadow = '0 0 10px rgba(255, 0, 0, 0.5)';
+        
+        setTimeout(() => {
+            passwordInput.style.borderColor = '#ff4444';
+            passwordInput.style.boxShadow = 'none';
+        }, 1000);
+    }
+}
+
+// Проверяем авторизацию при попытке доступа к админке
+function checkAdminAuth() {
+    const isAuthenticated = localStorage.getItem('adminAuthenticated') === 'true';
+    
+    if (!isAuthenticated) {
+        // Если не авторизован, показываем страницу пароля
+        showPasswordPage();
+        return false;
+    }
+    return true;
+}
+
+// Обновляем функцию showPage для админки
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    
+    const pageElement = document.getElementById(pageId);
+    if (pageElement) {
+        pageElement.classList.add('active');
+    }
+    
+    window.scrollTo(0, 0);
+    
+    if (pageId === 'worksPage') {
+        closeStudentWorks();
+    } else if (pageId === 'adminPage') {
+        // Проверяем авторизацию для админки
+        if (!checkAdminAuth()) {
+            return; // Не показываем админку, если не авторизован
+        }
+        initializeAdminPage();
+    } else if (pageId === 'helpPage') {
+        loadHelpSections();
+    } else if (pageId === 'passwordPage') {
+        // Ничего не делаем специального для страницы пароля
+    }
+}
 });
