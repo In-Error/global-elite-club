@@ -1398,3 +1398,153 @@ h1 {
 #sectionModal input {
     font-size: 1em;
 }
+/* Стили для свертываемых разделов помощи */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #2a2a2a;
+    border-radius: 8px;
+    border: 2px solid #444;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.section-header:hover {
+    border-color: #9370db;
+    background: #333;
+}
+
+.section-title-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.section-arrow {
+    color: #9370db;
+    font-size: 0.9em;
+    min-width: 20px;
+    text-align: center;
+}
+
+.section-title {
+    font-weight: bold;
+    color: #fff;
+    font-size: 1em;
+    flex: 1;
+}
+
+.section-content-collapsible {
+    padding: 15px;
+    background: #1a1a1a;
+    border-radius: 0 0 8px 8px;
+    border: 1px solid #444;
+    border-top: none;
+    margin-top: -5px;
+    line-height: 1.5;
+}
+
+.section-content-collapsible p {
+    margin-bottom: 10px;
+}
+
+.section-content-collapsible ul,
+.section-content-collapsible ol {
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+
+.section-content-collapsible a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.section-content-collapsible a:hover {
+    text-decoration: underline;
+}
+
+/* Стили для просмотра разделов учениками */
+.section-view-collapsible {
+    margin-bottom: 15px;
+}
+
+.section-view-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: #2a2a2a;
+    border-radius: 8px;
+    border: 2px solid #9370db;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.section-view-header:hover {
+    background: #333;
+    transform: translateX(5px);
+}
+
+.section-view-header h3 {
+    color: #9370db;
+    margin: 0;
+    font-size: 1.1em;
+    flex: 1;
+}
+
+.section-view-content {
+    padding: 15px;
+    background: #1a1a1a;
+    border-radius: 0 0 8px 8px;
+    border: 1px solid #9370db;
+    border-top: none;
+    margin-top: -5px;
+    line-height: 1.5;
+}
+
+.section-view-content p {
+    margin-bottom: 10px;
+}
+
+.section-view-content ul,
+.section-view-content ol {
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+
+.section-view-content a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.section-view-content a:hover {
+    text-decoration: underline;
+}
+
+/* Скрываем кнопку редактирования для неавторизованных */
+#toggleModeBtn[style*="display: none"] {
+    display: none !important;
+}
+
+/* Адаптивность для свертываемых разделов */
+@media (max-width: 768px) {
+    .section-header {
+        padding: 12px;
+    }
+    
+    .section-view-header {
+        padding: 12px;
+    }
+    
+    .section-view-header h3 {
+        font-size: 1em;
+    }
+    
+    .section-content-collapsible,
+    .section-view-content {
+        padding: 12px;
+    }
+}
