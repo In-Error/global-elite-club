@@ -1090,7 +1090,6 @@ function updateHelpUI() {
             sectionsGridView.innerHTML = '<p style="text-align: center; color: #aaa; padding: 40px;">Инструкции пока не добавлены...</p>';
         }
     }
-}
 
 async function addNewSection() {
     if (!checkAdminAuth()) {
