@@ -1,3 +1,5 @@
+[file name]: index.html
+[file content begin]
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -38,7 +40,8 @@
                 <button class="nav-btn-admin" onclick="showPasswordPage()">⚙️ Админка</button>
             </div>
         </div>
- <!-- Страница ввода пароля для админки -->
+
+        <!-- Страница ввода пароля для админки -->
         <div id="passwordPage" class="page">
             <div style="text-align: center; margin-bottom: 30px;">
                 <h2 style="color: #ff4444; text-shadow: 0 0 15px rgba(255, 68, 68, 0.7); font-size: 1.4em;">
@@ -66,38 +69,69 @@
                 <button class="nav-btn-yellow" onclick="showPage('mainPage')">← На главную</button>
             </div>
         </div>
-        <!-- Страница помощи -->
+
+        <!-- НОВАЯ СТРАНИЦА ПОМОЩИ -->
         <div id="helpPage" class="page">
             <div style="text-align: center; margin-bottom: 20px;">
                 <h2 style="color: #9370db; text-shadow: 0 0 15px rgba(147, 112, 219, 0.7); font-size: 1.4em;">
-                    ❓ Как объяснить ошибки?
+                    📚 База знаний: Как объяснить ошибки
                 </h2>
-                <button id="toggleModeBtn" class="toggle-mode-btn" onclick="toggleHelpMode()">
+                <button class="toggle-mode-btn" onclick="toggleHelpMode()" id="helpModeToggle">
                     🔧 Режим редактирования
                 </button>
             </div>
 
-            <!-- Режим администратора (редактирование) -->
-            <div id="adminMode" style="display: none;">
-                <div class="help-admin-section">
-                    <div class="admin-controls">
-                        <button class="add-section-btn" onclick="addNewSection()">+ Добавить раздел</button>
+            <!-- РЕЖИМ АДМИНА (ДОБАВЛЕНИЕ КАРТИНОК) -->
+            <div id="helpAdminMode" style="display: none;">
+                <!-- Форма создания нового раздела -->
+                <div class="create-section-form">
+                    <div class="form-group">
+                        <input type="text" id="newSectionName" placeholder="Название раздела (например: Артикли a/an/the)">
+                    </div>
+                    <button class="create-section-btn" onclick="createNewHelpSection()">
+                        ➕ Создать новый раздел
+                    </button>
+                </div>
+
+                <!-- Список разделов для редактирования -->
+                <div class="sections-list-admin" id="sectionsListAdmin">
+                    <!-- Здесь будут отображаться разделы -->
+                </div>
+
+                <!-- Выбранный раздел для редактирования -->
+                <div class="selected-section-editor" id="selectedSectionEditor" style="display: none;">
+                    <div class="section-editor-header">
+                        <h3 id="editingSectionTitle">Редактирование раздела</h3>
+                        <button class="close-editor-btn" onclick="closeSectionEditor()">✕ Закрыть</button>
                     </div>
                     
-                    <div class="sections-list" id="sectionsList">
-                        <!-- Список разделов будет здесь -->
+                    <div class="works-container" id="sectionWorksContainer">
+                        <!-- Здесь будут картинки как в "Ваших работах" -->
                     </div>
-                    
-                    <div class="editor-container" id="editorContainer" style="display: none;">
-                        <!-- Редактор будет здесь -->
+
+                    <div class="editor-buttons">
+                        <button class="delete-section-btn" onclick="deleteCurrentSection()">🗑️ Удалить раздел</button>
+                        <button class="save-section-btn" onclick="saveSectionImages()">💾 Сохранить изменения</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Режим ученика (просмотр) -->
-            <div id="studentMode">
-                <div class="help-sections-view" id="helpSectionsView">
-                    <!-- Разделы для просмотра будут здесь -->
+            <!-- РЕЖИМ УЧЕНИКА (ПРОСМОТР) -->
+            <div id="helpStudentMode">
+                <div class="sections-grid" id="sectionsGrid">
+                    <!-- Здесь будут разделы в виде карточек -->
+                </div>
+
+                <!-- Полноэкранный просмотр раздела -->
+                <div class="section-fullscreen" id="sectionFullscreen" style="display: none;">
+                    <div class="fullscreen-header">
+                        <h3 id="fullscreenSectionTitle">Название раздела</h3>
+                        <button class="close-fullscreen-btn" onclick="closeFullscreenSection()">✕ Закрыть</button>
+                    </div>
+                    
+                    <div class="fullscreen-images" id="fullscreenImages">
+                        <!-- Здесь будут картинки раздела -->
+                    </div>
                 </div>
             </div>
 
@@ -177,19 +211,6 @@
                 <button class="nav-btn-yellow" onclick="showPage('mainPage')">← На главную</button>
             </div>
         </div>
-
-        <!-- Модальное окно для создания раздела помощи -->
-        <div id="sectionModal" class="modal">
-            <div class="modal-content-section" style="background: #1a1a1a; padding: 20px; border-radius: 10px; max-width: 400px; margin: 100px auto;">
-                <h3 style="color: #9370db; margin-bottom: 15px;">Новый раздел</h3>
-                <input type="text" id="sectionNameInput" placeholder="Название раздела (например: Артикли)" 
-                       style="width: 100%; padding: 10px; margin-bottom: 15px; background: #2a2a2a; color: white; border: 2px solid #9370db; border-radius: 5px;">
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="closeSectionModal()" class="cancel-btn" style="flex: 1; padding: 10px; background: #555; color: white; border: none; border-radius: 5px; cursor: pointer;">Отмена</button>
-                    <button onclick="saveNewSection()" class="save-btn" style="flex: 1; padding: 10px; background: #9370db; color: white; border: none; border-radius: 5px; cursor: pointer;">Создать</button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Модальное окно для полноэкранного просмотра -->
@@ -203,36 +224,20 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
 
-<!-- Добавь этот скрипт здесь -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Закрытие модального окна по ESC
+    // Закрытие по ESC
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
-            const modal = document.getElementById('sectionModal');
-            if (modal && modal.style.display === 'block') {
-                closeSectionModal();
-            }
-            
-            // Также закрываем модальное окно с изображением
             const imageModal = document.getElementById('imageModal');
             if (imageModal && imageModal.style.display === 'block') {
                 closeModal();
             }
         }
     });
-    
-    // Закрытие модального окна по клику вне его
-    const modal = document.getElementById('sectionModal');
-    if (modal) {
-        modal.addEventListener('click', function(event) {
-            if (event.target === modal) {
-                closeSectionModal();
-            }
-        });
-    }
 });
 </script>
 
 </body>
 </html>
+[file content end]
