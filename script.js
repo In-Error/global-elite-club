@@ -1392,14 +1392,14 @@ async function handleHelpImageUpload(event) {
         const newImage = {
             image: compressionResult.data,
             compressionInfo: compressionInfo,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            timestamp: new Date().toISOString() // Используем обычную дату вместо FieldValue
         };
         
         // Получаем текущие изображения
         const images = helpSectionImages[currentHelpSectionId] || [];
         images.push(newImage);
         
-        // Сохраняем в Firebase
+        // Сохраняем в Firebase без FieldValue в массиве
         await db.collection('helpSectionImages').doc(currentHelpSectionId).set({
             images: images,
             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
