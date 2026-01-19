@@ -1076,20 +1076,21 @@ function updateHelpUI() {
         
         let imagesHTML = '';
         if (images.length > 0) {
-            images.forEach((imageData, index) => {
-                const compressionInfo = imageData.compressionInfo ? `<div class="compression-info">${imageData.compressionInfo}</div>` : '';
-                const timestamp = imageData.timestamp ? formatDateTime(imageData.timestamp) : '';
-                
-                imagesHTML += `
-                    <div class="help-image-item">
-                        <img src="${imageData.image}" class="help-image-preview" alt="Изображение ${index + 1}" onclick="openFullscreen('${imageData.image}')">
-                        <div class="help-image-number">Изображение ${index + 1}</div>
-                        ${compressionInfo}
-                        <div class="upload-time">${timestamp}</div>
-                        <button class="delete-btn" onclick="deleteHelpImage('${currentHelpSectionId}', ${index})">🗑️ Удалить</button>
-                    </div>
-                `;
-            });
+images.forEach((imageData, index) => {
+    const compressionInfo = imageData.compressionInfo ? `<div class="compression-info">${imageData.compressionInfo}</div>` : '';
+    const timestamp = imageData.timestamp ? formatDateTime(imageData.timestamp) : '';
+    const imageName = imageData.name || `Изображение ${index + 1}`; // ИСПОЛЬЗУЕМ НАЗВАНИЕ
+    
+    imagesHTML += `
+        <div class="help-image-item">
+            <img src="${imageData.image}" class="help-image-preview" alt="${imageName}" onclick="openFullscreen('${imageData.image}')">
+            <div class="help-image-name">${imageName}</div>
+            ${compressionInfo}
+            <div class="upload-time">${timestamp}</div>
+            <button class="delete-btn" onclick="deleteHelpImage('${currentHelpSectionId}', ${index})">🗑️ Удалить</button>
+        </div>
+    `;
+});
         } else {
             imagesHTML = '<div style="text-align: center; color: #aaa; padding: 20px;">Нет изображений. Загрузите первое!</div>';
         }
@@ -1240,13 +1241,14 @@ function openHelpSectionView(sectionId) {
     let imagesHTML = '';
     if (images.length > 0) {
         images.forEach((imageData, index) => {
-            imagesHTML += `
-                <div class="help-image-item-view">
-                    <img src="${imageData.image}" class="help-image-preview-view" alt="Изображение ${index + 1}" onclick="openFullscreen('${imageData.image}')">
-                    <div class="help-image-number">Изображение ${index + 1}</div>
-                </div>
-            `;
-        });
+    const imageName = imageData.name || `Изображение ${index + 1}`;
+    imagesHTML += `
+        <div class="help-image-item-view">
+            <img src="${imageData.image}" class="help-image-preview-view" alt="${imageName}" onclick="openFullscreen('${imageData.image}')">
+            <div class="help-image-name">${imageName}</div>
+        </div>
+    `;
+});
     } else {
         imagesHTML = '<div style="text-align: center; color: #aaa; padding: 40px;">В этом разделе пока нет изображений</div>';
     }
@@ -1367,6 +1369,19 @@ async function handleHelpImageUpload(event) {
         return;
     }
     
+    // СПРОСИТЬ НАЗВАНИЕ КАРТИНКИ
+    const imageName = prompt('Введите название для этой картинки:', 
+                           `Изображение ${(helpSectionImages[currentHelpSectionId] || []).length + 1}`);
+    
+    if (imageName === null) {
+        return; // Пользователь отменил
+    }
+    
+    if (!imageName.trim()) {
+        alert('Название не может быть пустым!');
+        return;
+    }
+    
     try {
         updateSyncStatus('🔄 Загрузка изображения...');
         
@@ -1391,8 +1406,9 @@ async function handleHelpImageUpload(event) {
         
         const newImage = {
             image: compressionResult.data,
+            name: imageName.trim(), // ДОБАВЛЕНО НАЗВАНИЕ
             compressionInfo: compressionInfo,
-            timestamp: new Date().toISOString() // Используем обычную дату вместо FieldValue
+            timestamp: new Date().toISOString()
         };
         
         // Получаем текущие изображения
@@ -1416,7 +1432,6 @@ async function handleHelpImageUpload(event) {
         alert('Ошибка загрузки: ' + error.message);
     }
 }
-
 async function deleteHelpImage(sectionId, imageIndex) {
     if (!checkAdminAuth()) {
         showPasswordPage();
