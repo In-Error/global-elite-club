@@ -1499,3 +1499,17 @@ h1 {
         grid-template-columns: 1fr;
     }
 }
+/* Стили для названий картинок в разделе помощи */
+.help-image-name {
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 5px;
+    font-size: 1em;
+    text-align: center;
+}
+
+.help-image-number {
+    font-size: 0.8em;
+    color: #aaa;
+    margin-top: 3px;
+}
