@@ -974,7 +974,11 @@ function createAdditionalWorks(student, workType) {
     `;
 }
 
-// === РАЗДЕЛ ПОМОЩИ ===
+// === НОВЫЙ ФУНКЦИОНАЛ ДЛЯ ПОМОЩИ (ГАЛЕРЕЯ ИЗОБРАЖЕНИЙ С НАЗВАНИЯМИ) ===
+
+let currentHelpSectionId = null;
+let helpImagesData = {}; // { sectionId: [imageData1, imageData2, ...] }
+
 async function loadHelpSections() {
     try {
         const snapshot = await db.collection('helpSections').get();
@@ -984,47 +988,443 @@ async function loadHelpSections() {
             helpSectionsData[doc.id] = doc.data();
         });
         
+        // Загружаем изображения для каждого раздела
+        await loadAllHelpImages();
+        
         updateHelpUI();
         
     } catch (error) {
         console.error('Ошибка загрузки разделов:', error);
         helpSectionsData = JSON.parse(localStorage.getItem('helpSectionsData')) || {};
+        helpImagesData = JSON.parse(localStorage.getItem('helpImagesData')) || {};
+    }
+}
+
+async function loadAllHelpImages() {
+    helpImagesData = {};
+    
+    try {
+        const snapshot = await db.collection('helpImages').get();
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const sectionId = data.sectionId;
+            
+            if (!helpImagesData[sectionId]) {
+                helpImagesData[sectionId] = [];
+            }
+            
+            helpImagesData[sectionId].push({
+                id: doc.id,
+                image: data.image,
+                title: data.title || '', // ДОБАВЛЕНО: название картинки
+                timestamp: data.timestamp,
+                compressionInfo: data.compressionInfo,
+                fileName: data.fileName
+            });
+        });
+        
+        // Сортируем по времени загрузки (новые сверху)
+        Object.keys(helpImagesData).forEach(sectionId => {
+            helpImagesData[sectionId].sort((a, b) => 
+                new Date(b.timestamp) - new Date(a.timestamp)
+            );
+        });
+        
+    } catch (error) {
+        console.error('Ошибка загрузки изображений помощи:', error);
     }
 }
 
 function updateHelpUI() {
-    const sectionsList = document.getElementById('sectionsList');
-    const helpSectionsView = document.getElementById('helpSectionsView');
+    const sectionsGrid = document.getElementById('sectionsGrid');
+    const sectionsGridView = document.getElementById('sectionsGridView');
     
-    if (isHelpAdminMode && sectionsList) {
-        sectionsList.innerHTML = '';
+    // Админский режим
+    if (isHelpAdminMode && sectionsGrid) {
+        sectionsGrid.innerHTML = '';
         
         Object.entries(helpSectionsData).forEach(([id, section]) => {
+            const imagesCount = helpImagesData[id] ? helpImagesData[id].length : 0;
+            
             const sectionDiv = document.createElement('div');
-            sectionDiv.className = `section-card ${currentSectionId === id ? 'active' : ''}`;
+            sectionDiv.className = 'help-section-card';
             sectionDiv.innerHTML = `
-                <div class="section-header">
-                    <div class="section-title-container">
-                        <span class="section-arrow" id="sectionArrow_${id}">▶</span>
-                        <div class="section-title">${section.title || 'Без названия'}</div>
-                    </div>
-                    <div class="section-actions">
-                        <button class="edit-section-btn" onclick="editSection('${id}')">✏️</button>
-                        <button class="delete-section-btn" onclick="deleteSection('${id}')">🗑️</button>
-                    </div>
+                <div class="help-section-content">
+                    <div class="help-section-title">${section.title || 'Без названия'}</div>
+                    <div class="help-section-count">${imagesCount} картинок</div>
                 </div>
-                <div class="section-content-collapsible" id="sectionContent_${id}" style="display: none;">
-                    ${section.content || '<p style="color: #aaa;">Содержание пока не добавлено...</p>'}
+                <div class="help-section-actions">
+                    <button class="view-section-btn" onclick="openSectionImages('${id}')">📁 Открыть</button>
+                    <button class="delete-help-section-btn" onclick="deleteHelpSection('${id}')">🗑️</button>
                 </div>
             `;
+            sectionsGrid.appendChild(sectionDiv);
+        });
+        
+        if (Object.keys(helpSectionsData).length === 0) {
+            sectionsGrid.innerHTML = '<p style="text-align: center; color: #aaa; padding: 40px;">Нет разделов. Добавьте первый!</p>';
+        }
+    }
+    
+    // Режим ученика
+    if (!isHelpAdminMode && sectionsGridView) {
+        sectionsGridView.innerHTML = '';
+        
+        Object.entries(helpSectionsData).forEach(([id, section]) => {
+            const imagesCount = helpImagesData[id] ? helpImagesData[id].length : 0;
             
-            // Добавляем обработчик клика на заголовок
-            const header = sectionDiv.querySelector('.section-header');
-            header.onclick = (e) => {
-                if (!e.target.closest('.section-actions')) {
-                    toggleSectionContent(id);
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'help-section-card-view';
+            sectionDiv.onclick = () => openSectionView(id);
+            sectionDiv.innerHTML = `
+                <div class="help-section-content-view">
+                    <div class="help-section-title-view">${section.title || 'Без названия'}</div>
+                    <div class="help-section-count-view">${imagesCount} картинок</div>
+                </div>
+                <div class="help-section-arrow">▶</div>
+            `;
+            sectionsGridView.appendChild(sectionDiv);
+        });
+        
+        if (Object.keys(helpSectionsData).length === 0) {
+            sectionsGridView.innerHTML = '<p style="text-align: center; color: #aaa; padding: 40px;">Инструкции пока не добавлены...</p>';
+        }
+    }
+}
+
+async function addNewSection() {
+    if (!checkAdminAuth()) {
+        showPasswordPage();
+        return;
+    }
+    
+    const title = prompt('Введите название нового раздела:');
+    if (!title || !title.trim()) return;
+    
+    try {
+        const id = 'help_' + Date.now();
+        const newSection = {
+            title: title.trim(),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        await db.collection('helpSections').doc(id).set(newSection);
+        helpSectionsData[id] = newSection;
+        helpImagesData[id] = [];
+        
+        updateSyncStatus('✅ Раздел добавлен');
+        updateHelpUI();
+        
+    } catch (error) {
+        console.error('Ошибка создания раздела:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+async function deleteHelpSection(sectionId) {
+    if (!checkAdminAuth()) {
+        showPasswordPage();
+        return;
+    }
+    
+    if (!confirm('Удалить этот раздел и все картинки в нём?')) return;
+    
+    try {
+        // Удаляем раздел
+        await db.collection('helpSections').doc(sectionId).delete();
+        
+        // Удаляем все изображения этого раздела
+        const images = helpImagesData[sectionId] || [];
+        for (const image of images) {
+            await db.collection('helpImages').doc(image.id).delete();
+        }
+        
+        delete helpSectionsData[sectionId];
+        delete helpImagesData[sectionId];
+        
+        if (currentHelpSectionId === sectionId) {
+            closeSectionImages();
+        }
+        
+        updateSyncStatus('✅ Раздел удален');
+        updateHelpUI();
+        
+    } catch (error) {
+        console.error('Ошибка удаления:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+function openSectionImages(sectionId) {
+    currentHelpSectionId = sectionId;
+    
+    const section = helpSectionsData[sectionId];
+    const sectionImagesContainer = document.getElementById('sectionImagesContainer');
+    const currentSectionTitle = document.getElementById('currentSectionTitle');
+    const imagesGrid = document.getElementById('imagesGrid');
+    
+    if (sectionImagesContainer && currentSectionTitle && imagesGrid) {
+        // Скрываем список разделов
+        document.getElementById('sectionsGrid').style.display = 'none';
+        document.querySelector('.admin-controls').style.display = 'none';
+        
+        // Показываем контейнер с картинками
+        sectionImagesContainer.style.display = 'block';
+        currentSectionTitle.textContent = section.title || 'Без названия';
+        
+        // Загружаем картинки
+        renderSectionImages(imagesGrid, sectionId, true);
+    }
+}
+
+function closeSectionImages() {
+    currentHelpSectionId = null;
+    
+    const sectionImagesContainer = document.getElementById('sectionImagesContainer');
+    
+    if (sectionImagesContainer) {
+        sectionImagesContainer.style.display = 'none';
+        document.getElementById('sectionsGrid').style.display = 'grid';
+        document.querySelector('.admin-controls').style.display = 'block';
+    }
+}
+
+async function uploadImagesToSection() {
+    if (!checkAdminAuth() || !currentHelpSectionId) return;
+    
+    const input = document.getElementById('imageUpload');
+    if (!input || !input.files.length) return;
+    
+    const files = Array.from(input.files);
+    let uploadedCount = 0;
+    
+    for (const file of files) {
+        if (file && file.type.startsWith('image/')) {
+            try {
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`Файл "${file.name}" слишком большой. Максимум 10MB`);
+                    continue;
                 }
-            };
+                
+                updateSyncStatus(`🔄 Загрузка: ${file.name}...`);
+                
+                // Сжимаем изображение
+                let compressionResult = await compressImage(file, 1200, 0.8);
+                
+                if (compressionResult.compressedSize > 900000) {
+                    compressionResult = await compressImage(file, 800, 0.6);
+                }
+                
+                if (compressionResult.compressedSize > 950000) {
+                    alert(`Изображение "${file.name}" слишком детализированное после сжатия`);
+                    continue;
+                }
+                
+                const compressionInfo = `Сжато: ${(compressionResult.originalSize/1024/1024).toFixed(1)}MB → ${(compressionResult.compressedSize/1024/1024).toFixed(1)}MB`;
+                
+                // Запрашиваем название для картинки
+                const imageTitle = prompt(`Введите название для картинки "${file.name}":`, '');
+                
+                // Сохраняем в Firebase
+                const imageId = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                await db.collection('helpImages').doc(imageId).set({
+                    sectionId: currentHelpSectionId,
+                    image: compressionResult.data,
+                    title: imageTitle || '', // ДОБАВЛЕНО: сохраняем название
+                    compressionInfo: compressionInfo,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    fileName: file.name
+                });
+                
+                // Добавляем в локальные данные
+                if (!helpImagesData[currentHelpSectionId]) {
+                    helpImagesData[currentHelpSectionId] = [];
+                }
+                
+                helpImagesData[currentHelpSectionId].unshift({
+                    id: imageId,
+                    image: compressionResult.data,
+                    title: imageTitle || '', // ДОБАВЛЕНО: сохраняем название
+                    timestamp: new Date().toISOString(),
+                    compressionInfo: compressionInfo,
+                    fileName: file.name
+                });
+                
+                uploadedCount++;
+                
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                alert(`Ошибка загрузки "${file.name}": ${error.message}`);
+            }
+        }
+    }
+    
+    // Очищаем input
+    input.value = '';
+    
+    // Обновляем UI
+    const imagesGrid = document.getElementById('imagesGrid');
+    if (imagesGrid) {
+        renderSectionImages(imagesGrid, currentHelpSectionId, true);
+    }
+    
+    updateSyncStatus(`✅ Загружено ${uploadedCount} из ${files.length} картинок`);
+    updateHelpUI(); // Обновляем счетчик картинок
+}
+
+function renderSectionImages(container, sectionId, isAdmin = false) {
+    const images = helpImagesData[sectionId] || [];
+    
+    if (images.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #aaa; padding: 40px;">Пока нет картинок в этом разделе</p>';
+        return;
+    }
+    
+    let html = '';
+    
+    images.forEach((imgData, index) => {
+        if (isAdmin) {
+            html += `
+                <div class="help-image-item-admin">
+                    <img src="${imgData.image}" 
+                         class="help-image-preview" 
+                         alt="${imgData.title || 'Изображение'}"
+                         onclick="openFullscreen('${imgData.image}')">
+                    <div class="help-image-info">
+                        <div class="help-image-index">#${index + 1}</div>
+                        
+                        <!-- ПОЛЕ ДЛЯ РЕДАКТИРОВАНИЯ НАЗВАНИЯ -->
+                        <div class="image-title-edit">
+                            <input type="text" 
+                                   class="image-title-input" 
+                                   value="${imgData.title || ''}" 
+                                   placeholder="Введите название..."
+                                   onchange="updateImageTitle('${imgData.id}', this.value)"
+                                   onclick="event.stopPropagation()">
+                        </div>
+                        
+                        <div class="help-image-size">${imgData.compressionInfo || 'Размер неизвестен'}</div>
+                        <button class="delete-help-image-btn" onclick="deleteHelpImage('${imgData.id}', '${sectionId}')">
+                            🗑️ Удалить
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="help-image-item-view">
+                    <img src="${imgData.image}" 
+                         class="help-image-preview-view" 
+                         alt="${imgData.title || 'Изображение'}"
+                         onclick="openFullscreen('${imgData.image}')">
+                    
+                    <!-- НАЗВАНИЕ КАРТИНКИ (видно ученикам) -->
+                    <div class="help-image-title-view">
+                        ${imgData.title || `Картинка ${index + 1}`}
+                    </div>
+                    
+                    <div class="help-image-number">${index + 1}</div>
+                </div>
+            `;
+        }
+    });
+    
+    container.innerHTML = html;
+}
+
+async function updateImageTitle(imageId, newTitle) {
+    if (!checkAdminAuth()) return;
+    
+    try {
+        await db.collection('helpImages').doc(imageId).update({
+            title: newTitle,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Обновляем в локальных данных
+        for (const sectionId in helpImagesData) {
+            const images = helpImagesData[sectionId];
+            const imageIndex = images.findIndex(img => img.id === imageId);
+            if (imageIndex !== -1) {
+                helpImagesData[sectionId][imageIndex].title = newTitle;
+                break;
+            }
+        }
+        
+        updateSyncStatus('✅ Название обновлено');
+        
+        // Если находимся в режиме просмотра, обновляем и его
+        if (!isHelpAdminMode && currentHelpSectionId) {
+            const imagesGridView = document.getElementById('imagesGridView');
+            if (imagesGridView) {
+                renderSectionImages(imagesGridView, currentHelpSectionId, false);
+            }
+        }
+        
+    } catch (error) {
+        console.error('Ошибка обновления названия:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+async function deleteHelpImage(imageId, sectionId) {
+    if (!checkAdminAuth()) return;
+    
+    if (!confirm('Удалить эту картинку?')) return;
+    
+    try {
+        await db.collection('helpImages').doc(imageId).delete();
+        
+        // Удаляем из локальных данных
+        if (helpImagesData[sectionId]) {
+            helpImagesData[sectionId] = helpImagesData[sectionId].filter(img => img.id !== imageId);
+        }
+        
+        // Обновляем UI
+        const imagesGrid = document.getElementById('imagesGrid');
+        if (imagesGrid && currentHelpSectionId === sectionId) {
+            renderSectionImages(imagesGrid, sectionId, true);
+        }
+        
+        updateSyncStatus('✅ Картинка удалена');
+        updateHelpUI(); // Обновляем счетчик картинок
+        
+    } catch (error) {
+        console.error('Ошибка удаления:', error);
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+// Функции для режима просмотра (ученики)
+function openSectionView(sectionId) {
+    currentHelpSectionId = sectionId;
+    
+    const section = helpSectionsData[sectionId];
+    const sectionImagesView = document.getElementById('sectionImagesView');
+    const sectionsGridView = document.getElementById('sectionsGridView');
+    const viewSectionTitle = document.getElementById('viewSectionTitle');
+    const imagesGridView = document.getElementById('imagesGridView');
+    
+    if (sectionImagesView && sectionsGridView && viewSectionTitle && imagesGridView) {
+        sectionsGridView.style.display = 'none';
+        sectionImagesView.style.display = 'block';
+        viewSectionTitle.textContent = section.title || 'Без названия';
+        
+        renderSectionImages(imagesGridView, sectionId, false);
+    }
+}
+
+function closeSectionView() {
+    currentHelpSectionId = null;
+    
+    const sectionImagesView = document.getElementById('sectionImagesView');
+    const sectionsGridView = document.getElementById('sectionsGridView');
+    
+    if (sectionImagesView && sectionsGridView) {
+        sectionImagesView.style.display = 'none';
+        sectionsGridView.style.display = 'grid';
+    }
+}
             
             sectionsList.appendChild(sectionDiv);
         });
