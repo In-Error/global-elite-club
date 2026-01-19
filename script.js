@@ -31,6 +31,69 @@ let helpSectionsData = {};
 let currentSectionId = null;
 let isHelpAdminMode = false;
 let currentSelectedWeek = null;
+let currentHelpSectionId = null;
+let helpImagesData = {}; // { sectionId: [imageData1, imageData2, ...] }
+
+// === ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ НАВИГАЦИИ ===
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    
+    const pageElement = document.getElementById(pageId);
+    if (pageElement) {
+        pageElement.classList.add('active');
+    }
+    
+    window.scrollTo(0, 0);
+    
+    // Сохраняем текущую страницу в hash для возврата
+    if (pageId !== 'passwordPage') {
+        window.location.hash = pageId;
+    }
+    
+    if (pageId === 'worksPage') {
+        closeStudentWorks();
+    } else if (pageId === 'adminPage') {
+        if (!checkAdminAuth()) {
+            showPasswordPage();
+            return;
+        }
+        initializeAdminPage();
+    } else if (pageId === 'helpPage') {
+        loadHelpSections();
+        // Если пользователь не авторизован, скрываем кнопку редактирования
+        if (!checkAdminAuth()) {
+            const toggleBtn = document.getElementById('toggleModeBtn');
+            if (toggleBtn) {
+                toggleBtn.style.display = 'none';
+            }
+            isHelpAdminMode = false;
+        } else {
+            const toggleBtn = document.getElementById('toggleModeBtn');
+            if (toggleBtn) {
+                toggleBtn.style.display = 'inline-block';
+            }
+        }
+        updateHelpUI();
+    }
+}
+
+function showPasswordPage() {
+    const passwordPage = document.getElementById('passwordPage');
+    if (passwordPage) {
+        showPage('passwordPage');
+        const passwordInput = document.getElementById('adminPassword');
+        if (passwordInput) {
+            passwordInput.value = '';
+            passwordInput.focus();
+        }
+        const errorElement = document.getElementById('passwordError');
+        if (errorElement) {
+            errorElement.style.display = 'none';
+        }
+    }
+}
 
 // Функция обновления статуса синхронизации
 function updateSyncStatus(message, isSuccess = true) {
@@ -975,10 +1038,6 @@ function createAdditionalWorks(student, workType) {
 }
 
 // === НОВЫЙ ФУНКЦИОНАЛ ДЛЯ ПОМОЩИ (ГАЛЕРЕЯ ИЗОБРАЖЕНИЙ С НАЗВАНИЯМИ) ===
-
-let currentHelpSectionId = null;
-let helpImagesData = {}; // { sectionId: [imageData1, imageData2, ...] }
-
 async function loadHelpSections() {
     try {
         const snapshot = await db.collection('helpSections').get();
@@ -1016,7 +1075,7 @@ async function loadAllHelpImages() {
             helpImagesData[sectionId].push({
                 id: doc.id,
                 image: data.image,
-                title: data.title || '', // ДОБАВЛЕНО: название картинки
+                title: data.title || '',
                 timestamp: data.timestamp,
                 compressionInfo: data.compressionInfo,
                 fileName: data.fileName
@@ -1090,6 +1149,7 @@ function updateHelpUI() {
             sectionsGridView.innerHTML = '<p style="text-align: center; color: #aaa; padding: 40px;">Инструкции пока не добавлены...</p>';
         }
     }
+}
 
 async function addNewSection() {
     if (!checkAdminAuth()) {
@@ -1229,7 +1289,7 @@ async function uploadImagesToSection() {
                 await db.collection('helpImages').doc(imageId).set({
                     sectionId: currentHelpSectionId,
                     image: compressionResult.data,
-                    title: imageTitle || '', // ДОБАВЛЕНО: сохраняем название
+                    title: imageTitle || '',
                     compressionInfo: compressionInfo,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                     fileName: file.name
@@ -1243,7 +1303,7 @@ async function uploadImagesToSection() {
                 helpImagesData[currentHelpSectionId].unshift({
                     id: imageId,
                     image: compressionResult.data,
-                    title: imageTitle || '', // ДОБАВЛЕНО: сохраняем название
+                    title: imageTitle || '',
                     timestamp: new Date().toISOString(),
                     compressionInfo: compressionInfo,
                     fileName: file.name
@@ -1268,7 +1328,7 @@ async function uploadImagesToSection() {
     }
     
     updateSyncStatus(`✅ Загружено ${uploadedCount} из ${files.length} картинок`);
-    updateHelpUI(); // Обновляем счетчик картинок
+    updateHelpUI();
 }
 
 function renderSectionImages(container, sectionId, isAdmin = false) {
@@ -1386,7 +1446,7 @@ async function deleteHelpImage(imageId, sectionId) {
         }
         
         updateSyncStatus('✅ Картинка удалена');
-        updateHelpUI(); // Обновляем счетчик картинок
+        updateHelpUI();
         
     } catch (error) {
         console.error('Ошибка удаления:', error);
@@ -1424,39 +1484,8 @@ function closeSectionView() {
         sectionsGridView.style.display = 'grid';
     }
 }
-            
-            sectionsList.appendChild(sectionDiv);
-        });
-        
-        if (Object.keys(helpSectionsData).length === 0) {
-            sectionsList.innerHTML = '<p style="text-align: center; color: #aaa;">Нет разделов. Добавьте первый!</p>';
-        }
-    }
-    
-    if (!isHelpAdminMode && helpSectionsView) {
-        helpSectionsView.innerHTML = '';
-        
-        Object.entries(helpSectionsData).forEach(([id, section]) => {
-            const sectionDiv = document.createElement('div');
-            sectionDiv.className = 'section-view-collapsible';
-            sectionDiv.innerHTML = `
-                <div class="section-view-header" onclick="toggleSectionContent('${id}')">
-                    <span class="section-arrow" id="sectionArrow_${id}">▶</span>
-                    <h3>${section.title || 'Без названия'}</h3>
-                </div>
-                <div class="section-view-content" id="sectionContent_${id}" style="display: none;">
-                    ${section.content || '<p style="color: #aaa;">Содержание пока не добавлено...</p>'}
-                </div>
-            `;
-            helpSectionsView.appendChild(sectionDiv);
-        });
-        
-        if (Object.keys(helpSectionsData).length === 0) {
-            helpSectionsView.innerHTML = '<p style="text-align: center; color: #aaa; padding: 40px;">Инструкции пока не добавлены...</p>';
-        }
-    }
-}
 
+// === СТАРЫЕ ФУНКЦИИ ПОМОЩИ (для совместимости) ===
 function toggleHelpMode() {
     if (!checkAdminAuth()) {
         showPasswordPage();
@@ -1488,20 +1517,6 @@ function toggleHelpMode() {
     updateHelpUI();
 }
 
-function addNewSection() {
-    if (!checkAdminAuth()) {
-        showPasswordPage();
-        return;
-    }
-    
-    const modal = document.getElementById('sectionModal');
-    if (modal) {
-        modal.style.display = 'block';
-        const input = document.getElementById('sectionNameInput');
-        if (input) input.focus();
-    }
-}
-
 function closeSectionModal() {
     const modal = document.getElementById('sectionModal');
     if (modal) {
@@ -1510,220 +1525,6 @@ function closeSectionModal() {
     const input = document.getElementById('sectionNameInput');
     if (input) {
         input.value = '';
-    }
-}
-
-async function saveNewSection() {
-    if (!checkAdminAuth()) {
-        showPasswordPage();
-        return;
-    }
-    
-    const input = document.getElementById('sectionNameInput');
-    if (!input) return;
-    
-    const title = input.value.trim();
-    
-    if (!title) {
-        alert('Введите название раздела!');
-        return;
-    }
-    
-    try {
-        const id = 'section_' + Date.now();
-        const newSection = {
-            title: title,
-            content: '<p>Начните писать здесь...</p>',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        
-        await db.collection('helpSections').doc(id).set(newSection);
-        helpSectionsData[id] = newSection;
-        
-        closeSectionModal();
-        updateHelpUI();
-        editSection(id);
-        
-        updateSyncStatus('✅ Раздел добавлен');
-        
-    } catch (error) {
-        console.error('Ошибка создания раздела:', error);
-        alert('Ошибка: ' + error.message);
-    }
-}
-
-function editSection(sectionId) {
-    if (!checkAdminAuth()) {
-        showPasswordPage();
-        return;
-    }
-    
-    currentSectionId = sectionId;
-    const section = helpSectionsData[sectionId];
-    
-    const editorContainer = document.getElementById('editorContainer');
-    if (editorContainer) {
-        editorContainer.style.display = 'block';
-        editorContainer.innerHTML = createEditorHTML(section);
-        initEditor();
-        
-        // Прокручиваем к редактору
-        editorContainer.scrollIntoView({ behavior: 'smooth' });
-    }
-    
-    updateHelpUI();
-}
-
-function createEditorHTML(section) {
-    return `
-        <h3 style="color: #00ff00; margin-bottom: 20px;">Редактирование: ${section?.title || 'Новый раздел'}</h3>
-        
-        <div class="editor-toolbar" id="editorToolbar">
-            <button class="toolbar-btn" onclick="formatText('bold')" title="Жирный"><b>B</b></button>
-            <button class="toolbar-btn" onclick="formatText('italic')" title="Курсив"><i>I</i></button>
-            <button class="toolbar-btn" onclick="formatText('underline')" title="Подчеркнутый"><u>U</u></button>
-            <div style="width: 1px; background: #444; height: 30px;"></div>
-            <input type="color" class="color-picker" id="textColor" title="Цвет текста" onchange="changeTextColor(this.value)">
-            <div style="width: 1px; background: #444; height: 30px;"></div>
-            <button class="toolbar-btn" onclick="insertList('unordered')" title="Маркированный список">•</button>
-            <button class="toolbar-btn" onclick="insertList('ordered')" title="Нумерованный список">1.</button>
-            <button class="toolbar-btn" onclick="insertLink()" title="Ссылка">🔗</button>
-        </div>
-        
-        <div 
-            class="editor-content" 
-            id="editorContent" 
-            contenteditable="true"
-            oninput="updateEditorState()"
-        >${section?.content || '<p>Начните писать здесь...</p>'}</div>
-        
-        <div class="editor-buttons">
-            <button class="cancel-editor-btn" onclick="cancelEditing()">Отмена</button>
-            <button class="save-editor-btn" onclick="saveSectionContent()">💾 Сохранить</button>
-        </div>
-    `;
-}
-
-function initEditor() {
-    const editor = document.getElementById('editorContent');
-    if (editor) {
-        editor.focus();
-    }
-}
-
-function formatText(command) {
-    document.execCommand(command, false, null);
-    updateEditorState();
-}
-
-function changeTextColor(color) {
-    document.execCommand('foreColor', false, color);
-    updateEditorState();
-}
-
-function insertList(type) {
-    const command = type === 'unordered' ? 'insertUnorderedList' : 'insertOrderedList';
-    document.execCommand(command, false, null);
-    updateEditorState();
-}
-
-function insertLink() {
-    const url = prompt('Введите URL:', 'https://');
-    if (url) {
-        document.execCommand('createLink', false, url);
-        updateEditorState();
-    }
-}
-
-function updateEditorState() {
-    const toolbar = document.getElementById('editorToolbar');
-    if (toolbar) {
-        const commands = ['bold', 'italic', 'underline'];
-        commands.forEach(cmd => {
-            const btn = toolbar.querySelector(`[onclick*="${cmd}"]`);
-            if (btn) {
-                btn.classList.toggle('active', document.queryCommandState(cmd));
-            }
-        });
-    }
-}
-
-async function saveSectionContent() {
-    if (!checkAdminAuth()) {
-        showPasswordPage();
-        return;
-    }
-    
-    if (!currentSectionId) return;
-    
-    const editorContent = document.getElementById('editorContent');
-    if (!editorContent) return;
-    
-    const content = editorContent.innerHTML;
-    
-    try {
-        await db.collection('helpSections').doc(currentSectionId).update({
-            content: content,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        helpSectionsData[currentSectionId].content = content;
-        updateSyncStatus('✅ Раздел сохранен');
-        alert('Изменения сохранены!');
-        
-        updateHelpUI();
-        cancelEditing();
-        
-    } catch (error) {
-        console.error('Ошибка сохранения:', error);
-        alert('Ошибка: ' + error.message);
-    }
-}
-
-function cancelEditing() {
-    currentSectionId = null;
-    const editorContainer = document.getElementById('editorContainer');
-    if (editorContainer) {
-        editorContainer.style.display = 'none';
-    }
-    updateHelpUI();
-}
-
-async function deleteSection(sectionId) {
-    if (!checkAdminAuth()) {
-        showPasswordPage();
-        return;
-    }
-    
-    if (!confirm('Удалить этот раздел?')) return;
-    
-    try {
-        await db.collection('helpSections').doc(sectionId).delete();
-        delete helpSectionsData[sectionId];
-        
-        if (currentSectionId === sectionId) {
-            cancelEditing();
-        }
-        
-        updateHelpUI();
-        updateSyncStatus('✅ Раздел удален');
-        
-    } catch (error) {
-        console.error('Ошибка удаления:', error);
-        alert('Ошибка: ' + error.message);
-    }
-}
-
-// НОВАЯ функция для открытия/закрытия содержимого раздела
-function toggleSectionContent(sectionId) {
-    const contentElement = document.getElementById(`sectionContent_${sectionId}`);
-    const arrowElement = document.getElementById(`sectionArrow_${sectionId}`);
-    
-    if (contentElement && arrowElement) {
-        const isVisible = contentElement.style.display === 'block';
-        contentElement.style.display = isVisible ? 'none' : 'block';
-        arrowElement.textContent = isVisible ? '▶' : '▼';
     }
 }
 
@@ -1758,22 +1559,6 @@ function closeModal() {
 }
 
 // === ФУНКЦИИ ДЛЯ ПАРОЛЯ АДМИНКИ ===
-function showPasswordPage() {
-    const passwordPage = document.getElementById('passwordPage');
-    if (passwordPage) {
-        showPage('passwordPage');
-        const passwordInput = document.getElementById('adminPassword');
-        if (passwordInput) {
-            passwordInput.value = '';
-            passwordInput.focus();
-        }
-        const errorElement = document.getElementById('passwordError');
-        if (errorElement) {
-            errorElement.style.display = 'none';
-        }
-    }
-}
-
 function checkAdminPassword() {
     const passwordInput = document.getElementById('adminPassword');
     const errorElement = document.getElementById('passwordError');
@@ -1812,51 +1597,6 @@ function checkAdminAuth() {
     return localStorage.getItem('adminAuthenticated') === 'true';
 }
 
-// ОБНОВЛЁННАЯ функция showPage с проверкой пароля
-function showPage(pageId) {
-    document.querySelectorAll('.page').forEach(page => {
-        page.classList.remove('active');
-    });
-    
-    const pageElement = document.getElementById(pageId);
-    if (pageElement) {
-        pageElement.classList.add('active');
-    }
-    
-    window.scrollTo(0, 0);
-    
-    // Сохраняем текущую страницу в hash для возврата
-    if (pageId !== 'passwordPage') {
-        window.location.hash = pageId;
-    }
-    
-    if (pageId === 'worksPage') {
-        closeStudentWorks();
-    } else if (pageId === 'adminPage') {
-        if (!checkAdminAuth()) {
-            showPasswordPage();
-            return;
-        }
-        initializeAdminPage();
-    } else if (pageId === 'helpPage') {
-        loadHelpSections();
-        // Если пользователь не авторизован, скрываем кнопку редактирования
-        if (!checkAdminAuth()) {
-            const toggleBtn = document.getElementById('toggleModeBtn');
-            if (toggleBtn) {
-                toggleBtn.style.display = 'none';
-            }
-            isHelpAdminMode = false;
-        } else {
-            const toggleBtn = document.getElementById('toggleModeBtn');
-            if (toggleBtn) {
-                toggleBtn.style.display = 'inline-block';
-            }
-        }
-        updateHelpUI();
-    }
-}
-
 function closeStudentWorks() {
     currentSelectedStudent = null;
     const section = document.getElementById('studentWorksSection');
@@ -1874,6 +1614,7 @@ function closeStudentWorks() {
 document.addEventListener('DOMContentLoaded', async function() {
     // Создаем глобальные функции
     window.showPage = showPage;
+    window.showPasswordPage = showPasswordPage;
     window.openFullscreen = openFullscreen;
     window.closeModal = closeModal;
     window.handleWordInput = handleWordInput;
@@ -1890,28 +1631,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     window.addNewSection = addNewSection;
     window.closeSectionModal = closeSectionModal;
     window.saveNewSection = saveNewSection;
-    window.formatText = formatText;
-    window.changeTextColor = changeTextColor;
-    window.insertList = insertList;
-    window.insertLink = insertLink;
-    window.updateEditorState = updateEditorState;
-    window.saveSectionContent = saveSectionContent;
-    window.cancelEditing = cancelEditing;
-    window.editSection = editSection;
-    window.deleteSection = deleteSection;
-    window.toggleSectionContent = toggleSectionContent;
-    window.toggleHelpMode = toggleHelpMode;
-    window.addNewSection = addNewSection;
     window.openSectionImages = openSectionImages;
     window.closeSectionImages = closeSectionImages;
     window.uploadImagesToSection = uploadImagesToSection;
+    window.updateImageTitle = updateImageTitle;
     window.deleteHelpImage = deleteHelpImage;
-    window.deleteHelpSection = deleteHelpSection;
     window.openSectionView = openSectionView;
     window.closeSectionView = closeSectionView;
-    window.updateImageTitle = updateImageTitle;
+    window.deleteHelpSection = deleteHelpSection;
     window.checkAdminPassword = checkAdminPassword;
-    window.showPasswordPage = showPasswordPage;
     
     await loadAllData();
     
