@@ -66,16 +66,77 @@
                 <button class="nav-btn-yellow" onclick="showPage('mainPage')">← На главную</button>
             </div>
         </div>
-        <!-- Страница помощи -->
-        <div id="helpPage" class="page">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="color: #9370db; text-shadow: 0 0 15px rgba(147, 112, 219, 0.7); font-size: 1.4em;">
-                    ❓ Как объяснить ошибки?
-                </h2>
-                <button id="toggleModeBtn" class="toggle-mode-btn" onclick="toggleHelpMode()">
-                    🔧 Режим редактирования
-                </button>
+        <!-- Страница помощи (обновленная версия с названиями картинок) -->
+<div id="helpPage" class="page">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="color: #9370db; text-shadow: 0 0 15px rgba(147, 112, 219, 0.7); font-size: 1.4em;">
+            ❓ Как объяснить ошибки?
+        </h2>
+        <button id="toggleModeBtn" class="toggle-mode-btn" onclick="toggleHelpMode()" style="display: none;">
+            🔧 Режим редактирования
+        </button>
+    </div>
+
+    <!-- Режим администратора (редактирование) -->
+    <div id="adminMode" style="display: none;">
+        <div class="help-admin-section">
+            <div class="admin-controls">
+                <button class="add-section-btn" onclick="addNewSection()">+ Добавить раздел</button>
             </div>
+            
+            <div class="sections-grid" id="sectionsGrid">
+                <!-- Список разделов будет здесь -->
+            </div>
+            
+            <div class="section-images-container" id="sectionImagesContainer" style="display: none;">
+                <h3 id="currentSectionTitle" style="color: #9370db; margin-bottom: 15px;"></h3>
+                
+                <div class="images-grid" id="imagesGrid">
+                    <!-- Картинки раздела будут здесь -->
+                </div>
+                
+                <div class="upload-image-area">
+                    <input type="file" 
+                           id="imageUpload" 
+                           accept="image/*" 
+                           multiple 
+                           onchange="uploadImagesToSection()"
+                           style="display: none;">
+                    <button class="upload-image-btn" onclick="document.getElementById('imageUpload').click()">
+                        📷 Добавить картинки
+                    </button>
+                    <div class="upload-info">Можно выбрать несколько файлов</div>
+                </div>
+                
+                <div class="admin-buttons">
+                    <button class="nav-btn-yellow" onclick="closeSectionImages()">← К списку разделов</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Режим ученика (просмотр) -->
+    <div id="studentMode">
+        <div class="sections-grid-view" id="sectionsGridView">
+            <!-- Разделы для просмотра будут здесь -->
+        </div>
+        
+        <div class="section-images-view" id="sectionImagesView" style="display: none;">
+            <div class="section-images-header">
+                <button class="back-btn" onclick="closeSectionView()">← Назад</button>
+                <h3 id="viewSectionTitle" style="color: #9370db;"></h3>
+            </div>
+            
+            <div class="images-grid-view" id="imagesGridView">
+                <!-- Картинки для просмотра будут здесь -->
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="nav-btn-yellow" onclick="showPage('mainPage')">← На главную</button>
+    </div>
+</div>
 
             <!-- Режим администратора (редактирование) -->
             <div id="adminMode" style="display: none;">
