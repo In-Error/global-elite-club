@@ -1901,6 +1901,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     window.editSection = editSection;
     window.deleteSection = deleteSection;
     window.toggleSectionContent = toggleSectionContent;
+    window.toggleHelpMode = toggleHelpMode;
+    window.addNewSection = addNewSection;
+    window.openSectionImages = openSectionImages;
+    window.closeSectionImages = closeSectionImages;
+    window.uploadImagesToSection = uploadImagesToSection;
+    window.deleteHelpImage = deleteHelpImage;
+    window.deleteHelpSection = deleteHelpSection;
+    window.openSectionView = openSectionView;
+    window.closeSectionView = closeSectionView;
+    window.updateImageTitle = updateImageTitle;
     window.checkAdminPassword = checkAdminPassword;
     window.showPasswordPage = showPasswordPage;
     
