@@ -1370,16 +1370,18 @@ async function handleHelpImageUpload(event) {
     }
     
     // СПРОСИТЬ НАЗВАНИЕ КАРТИНКИ
-    const imageName = prompt('Введите название для этой картинки:', 
-                           `Изображение ${(helpSectionImages[currentHelpSectionId] || []).length + 1}`);
-    
-    if (imageName === null) {
-        return; // Пользователь отменил
-    }
-    
-    if (!imageName.trim()) {
-        alert('Название не может быть пустым!');
-        return;
+    let imageName = '';
+    while (!imageName.trim()) {
+        imageName = prompt('Введите название для этой картинки (например: Past Simple правило):', 
+                          `Изображение ${(helpSectionImages[currentHelpSectionId] || []).length + 1}`);
+        
+        if (imageName === null) {
+            return; // Пользователь отменил
+        }
+        
+        if (!imageName.trim()) {
+            alert('Название не может быть пустым! Введите название картинки.');
+        }
     }
     
     try {
