@@ -178,7 +178,7 @@ async function initializeWeekRating(weekId = null) {
             const studentsWithWeekPoints = students.map(student => ({
                 name: student,
                 points: weekPoints[student] || 0,
-                avatar: `avatars/${student}.png`
+                avatar: `avatars${student.trim().replace(/\s+/g, '')}.png`
             }));
             
             studentsWithWeekPoints.sort((a, b) => b.points - a.points);
@@ -237,7 +237,7 @@ async function initializeTotalRating() {
         const studentsWithTotalPoints = students.map(student => ({
             name: student,
             points: pointsMap[student] || 0,
-            avatar: `avatars/${student}.png`
+            avatar: `avatars${student.trim().replace(/\s+/g, '')}.png`
         }));
         
         studentsWithTotalPoints.sort((a, b) => b.points - a.points);
